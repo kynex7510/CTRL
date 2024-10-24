@@ -1,0 +1,8 @@
+.vscode
+Build
+lib
+Lib
+include
+*.3dsx
+*.elf
+*.smdh
