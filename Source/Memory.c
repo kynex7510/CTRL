@@ -5,8 +5,9 @@
  * - svcControlProcessMemory is more relaxed on checking addresses compared to svcControlMemory.
  * -- Citra only supports the latter, though it also doesn't enforce addresses checks.
  * -- It enforces permission checks, so MEMOP_PROT is a no-go; but it's "fine" as permissions arent really emulated.
- * - svcQueryMemory will never return if the page is executable; svcQueryProcessMemory does.
+ * - svcQueryMemory will never return whether the page is executable; svcQueryProcessMemory does.
  * -- Once again, citra doesn't have this limitation.
+ * - HOS doesn't expose anything for cleaning the instruction cache.
  */
 
 #include "CTRL/Memory.h"
@@ -23,8 +24,6 @@ static void ctrl_flushInsnCache(void) {
             asm("svc 0x94");
             return;
     }
-
-    // HOS doesn't expose anything for cleaning the instruction cache.
 }
 
 Result ctrlFlushCache(u32 addr, size_t size, size_t type) {
@@ -83,14 +82,13 @@ Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm) {
     if (ctrlDetectEnv() == Env_Citra)
         return 0;
 
-    const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
-    const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
-
     Handle proc;
     Result ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
     if (R_FAILED(ret))
         return ret;
 
+    const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
+    const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
     ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perm);
     svcCloseHandle(proc);
     return ret;
@@ -98,13 +96,11 @@ Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm) {
 
 static Result ctrl_mirrorAction(u32 addr, u32 source, size_t size, bool unmap) {
     Result ret = 0;
-    
     const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
     const u32 alignedSrc = ctrlAlignAddr(source, CTRL_PAGE_SIZE);
     const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
-    const CTRLEnv env = ctrlDetectEnv();
 
-    if (ctrlIsEmu(env)) {
+    if (ctrlDetectEnv() == Env_Citra) {
         u32 out;
         ret = svcControlMemory(&out, alignedAddr, alignedSrc, alignedSize, unmap ? MEMOP_UNMAP : MEMOP_MAP, MEMPERM_READWRITE);
     } else {

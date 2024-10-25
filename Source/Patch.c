@@ -2,30 +2,45 @@
 #include "CTRL/Memory.h"
 
 #include <string.h>
-#include <stdio.h>
 
 Result ctrlPatch(const CTRLPatch* patch) {
-    MemInfo info;
-    Result ret = ctrlQueryMemory(patch->addr, &info, NULL);
-    if (R_FAILED(ret))
-        return ret;
+    size_t handledSize = 0;
 
-    ret = ctrlChangePermission(patch->addr, patch->size, (info.perm | MEMPERM_WRITE));
-    if (R_FAILED(ret))
-        return ret;
+    while (handledSize < patch->size) {
+        MemInfo info;
+        const u32 curAddr = patch->addr + handledSize;
+        const size_t dataLeft = patch->size - handledSize;
 
-    memcpy((void*)patch->addr, (void*)patch->data, patch->size);
+        Result ret = ctrlQueryRegion(curAddr, &info);
+        if (R_FAILED(ret))
+            return ret;
 
-    ret = ctrlChangePermission(patch->addr, patch->size, info.perm);
-    if (R_SUCCEEDED(ret)) {
+        // Calculate how much data to handle in this step.
+        const size_t dataAvailable = (info.base_addr + info.size) - curAddr;
+        const size_t dataToProcess = dataLeft < dataAvailable ? dataLeft : dataAvailable;
+
+        ret = ctrlChangePermission(curAddr, dataToProcess, (info.perm | MEMPERM_WRITE));
+        if (R_FAILED(ret))
+            return ret;
+        
+        memcpy((void*)curAddr, (void*)(patch->data + handledSize), dataToProcess);
+
+        ret = ctrlChangePermission(curAddr, dataToProcess, info.perm);
+        if (R_FAILED(ret))
+            return ret;
+
         size_t type = CTRL_DCACHE;
         if (info.perm & MEMPERM_EXECUTE)
             type |= CTRL_ICACHE;
 
-        ret = ctrlFlushCache(patch->addr, patch->size, type);
+        ret = ctrlFlushCache(curAddr, dataToProcess, type);
+        if (R_FAILED(ret))
+            return ret;
+
+        handledSize += dataToProcess;
     }
 
-    return ret;
+    return 0;
 }
 
 Result ctrlPatchMulti(const CTRLPatch* patches, size_t size) {

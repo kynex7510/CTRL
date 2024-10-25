@@ -15,15 +15,6 @@ extern "C" {
 
 CTRLEnv ctrlDetectEnv(void);
 
-CTRL_INLINE bool ctrlIsEmu(CTRLEnv env) {
-    switch (env) {
-        case Env_Citra:
-            return true;
-    }
-
-    return false;
-}
-
 #if defined(__cplusplus)
 }
 #endif // __cplusplus
