@@ -3,12 +3,17 @@
 
 #include "CTRL/Types.h"
 
+#define CTRL_PAGE_SIZE 0x1000
+
+#define CTRL_ICACHE 0x01
+#define CTRL_DCACHE 0x02
+
 #if defined(__cplusplus)
 extern "C" {
 #endif // __cplusplus
 
-Result ctrlFlushCache(u32 addr, size_t size);
-Result ctrlFlushEntireCache(void);
+Result ctrlFlushCache(u32 addr, size_t size, size_t type);
+Result ctrlFlushEntireCache(size_t type);
 Result ctrlQueryMemory(u32 addr, MemInfo* meminfo, PageInfo* pageinfo);
 Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
 Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm);

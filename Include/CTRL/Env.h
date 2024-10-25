@@ -3,8 +3,6 @@
 
 #include "CTRL/Types.h"
 
-#define CTRL_PAGE_SIZE 0x1000
-
 typedef enum {
     Env_Unknown,
     Env_Luma,
@@ -21,8 +19,6 @@ CTRL_INLINE bool ctrlIsEmu(CTRLEnv env) {
     switch (env) {
         case Env_Citra:
             return true;
-        default:
-            break;
     }
 
     return false;

@@ -17,8 +17,13 @@ Result ctrlPatch(const CTRLPatch* patch) {
     memcpy((void*)patch->addr, (void*)patch->data, patch->size);
 
     ret = ctrlChangePermission(patch->addr, patch->size, info.perm);
-    if (R_SUCCEEDED(ret))
-        ret = ctrlFlushCache(patch->addr, patch->size);
+    if (R_SUCCEEDED(ret)) {
+        size_t type = CTRL_DCACHE;
+        if (info.perm & MEMPERM_EXECUTE)
+            type |= CTRL_ICACHE;
+
+        ret = ctrlFlushCache(patch->addr, patch->size, type);
+    }
 
     return ret;
 }

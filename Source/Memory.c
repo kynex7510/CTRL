@@ -14,41 +14,33 @@
 
 #include <string.h>
 
-#define CACHE_FAIL MAKERESULT(RL_FATAL, RS_NOTSUPPORTED, RM_COMMON, RD_NOT_IMPLEMENTED)
+#define DCACHE_THRESHOLD 0x700000
 
-extern void lumaFlushDataCacheRange(u32 addr, size_t size);
-extern void lumaFlushEntireDataCache(void);
-extern void lumaInvalidateInstructionCacheRange(u32 addr, size_t size);
-extern void lumaInvalidateEntireInstructionCache(void);
-
-Result ctrlFlushCache(u32 addr, size_t size) {
-    switch (ctrlDetectEnv()) {
-        // Citra supports luma extensions.
-        case Env_Luma:
-        case Env_Citra:
-            lumaInvalidateInstructionCacheRange(addr, size);
-            lumaFlushDataCacheRange(addr, size);
-            return 0;
-        default:
-            break;
-    }
-
-    return CACHE_FAIL;
-}
-
-Result ctrlFlushEntireCache(void) {
+static void ctrl_flushInsnCache(void) {
     switch (ctrlDetectEnv()) {
         case Env_Luma:
         case Env_Citra:
-            lumaInvalidateEntireInstructionCache();
-            lumaFlushEntireDataCache();
-            return 0;
-        default:
-            break;
+            asm("svc 0x94");
+            return;
     }
 
-    return CACHE_FAIL;
+    // HOS doesn't expose anything for cleaning the instruction cache.
 }
+
+Result ctrlFlushCache(u32 addr, size_t size, size_t type) {
+    if (type & CTRL_ICACHE)
+        ctrl_flushInsnCache();
+
+    if (type & CTRL_DCACHE) {
+        Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, addr, size);
+        if (R_FAILED(ret))
+            return ret;
+    }
+
+    return 0;
+}
+
+Result ctrlFlushEntireCache(size_t type) { return ctrlFlushCache(1, DCACHE_THRESHOLD, type); }
 
 Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;
@@ -99,11 +91,7 @@ Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm) {
     if (R_FAILED(ret))
         return ret;
 
-    // TODO: handle citra.
     ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perm);
-    if (R_SUCCEEDED(ret))
-        ret = ctrlFlushCache(alignedAddr, alignedSize);
-
     svcCloseHandle(proc);
     return ret;
 }
