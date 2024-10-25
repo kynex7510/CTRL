@@ -17,7 +17,7 @@
 
 #define DCACHE_THRESHOLD 0x700000
 
-static void ctrl_flushInsnCache(void) {
+static CTRL_INLINE void ctrl_flushInsnCache(void) {
     switch (ctrlDetectEnv()) {
         case Env_Luma:
         case Env_Citra:
