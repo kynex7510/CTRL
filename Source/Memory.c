@@ -8,6 +8,8 @@
  * - svcQueryMemory will never return whether the page is executable; svcQueryProcessMemory does.
  * -- Once again, citra doesn't have this limitation.
  * - HOS doesn't expose anything for cleaning the instruction cache.
+ * - When mapping/unmapping svcControlProcessMemory expects a region of pages.
+ * -- When unmapping, it's possible that the mirrored memory is made of multiple regions.
  */
 
 #include "CTRL/Memory.h"
@@ -92,27 +94,60 @@ Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
     return ret;
 }
 
-static Result ctrl_mirrorAction(u32 addr, u32 source, size_t size, bool unmap) {
+Result ctrlMirror(u32 addr, u32 source, size_t size) {
     Result ret = 0;
-    const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
-    const u32 alignedSrc = ctrlAlignAddr(source, CTRL_PAGE_SIZE);
-    const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
 
     if (ctrlDetectEnv() == Env_Citra) {
         u32 out;
-        ret = svcControlMemory(&out, alignedAddr, alignedSrc, alignedSize, unmap ? MEMOP_UNMAP : MEMOP_MAP, MEMPERM_READWRITE);
+        ret = svcControlMemory(&out, addr, source, size, MEMOP_MAP, MEMPERM_READWRITE);
     } else {
         Handle proc;
         ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
         if (R_FAILED(ret))
             return ret;
 
-        ret = svcControlProcessMemory(proc, alignedAddr, alignedSrc, alignedSize, unmap ? MEMOP_UNMAP : MEMOP_MAP, MEMPERM_READWRITE);
+        ret = svcControlProcessMemory(proc, addr, source, size, MEMOP_MAP, MEMPERM_READWRITE);
         svcCloseHandle(proc);
     }
 
     return ret;
 }
 
-Result ctrlMirror(u32 addr, u32 source, size_t size) { return ctrl_mirrorAction(addr, source, size, false); }
-Result ctrlUnmirror(u32 addr, u32 source, size_t size) { return ctrl_mirrorAction(addr, source, size, true); }
+Result ctrlUnmirror(u32 addr, u32 source, size_t size) {
+    Result ret = 0;
+    bool isCitra = (ctrlDetectEnv() == Env_Citra);
+    Handle proc = CUR_PROCESS_HANDLE;
+
+    if (!isCitra) {
+        ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
+        if (R_FAILED(ret))
+            return ret;
+    }
+
+    size_t processedData = 0;
+    while (processedData < size) {
+        MemInfo memInfo;
+        ret = ctrlQueryRegion(addr + processedData, &memInfo);
+        if (R_FAILED(ret))
+            break;
+
+        const size_t dataLeft = size - processedData;
+        const size_t dataToProcess = memInfo.size < dataLeft ? memInfo.size : dataLeft;
+        if (isCitra) {
+            u32 dummy;
+            ret = svcControlMemory(&dummy, addr + processedData, source + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
+        } else {
+            ret = svcControlProcessMemory(proc, addr + processedData, source + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
+        }
+
+        if (R_FAILED(ret))
+            break;
+
+        processedData += dataToProcess;
+    }
+
+    if (!isCitra)
+        svcCloseHandle(proc);
+    
+    return ret;
+}

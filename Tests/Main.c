@@ -103,7 +103,10 @@ static bool test2(void) {
     printf("Found address in CODE region: 0x%08lx\n", codeAddr);
 
     // Mirror code buffer to CODE region.
-    Result ret = ctrlMirror(codeAddr, (u32)mem, sizeof(codeBytes));
+    const u32 alignedCodeAddr = ctrlAlignAddr(codeAddr, CTRL_PAGE_SIZE);
+    const u32 alignedSrcAddr = ctrlAlignAddr((u32)mem, CTRL_PAGE_SIZE);
+    const u32 alignedSize = ctrlAlignSize(sizeof(codeBytes), CTRL_PAGE_SIZE);
+    Result ret = ctrlMirror(alignedCodeAddr, alignedSrcAddr, alignedSize);
     if (R_FAILED(ret)) {
         printf("MIRROR FAILED: 0x%08lx\n", ret);
         return false;
@@ -138,7 +141,7 @@ static bool test2(void) {
     }
 
     // Unmirror buffer from CODE region.
-    ret = ctrlUnmirror(codeAddr, (u32)mem, sizeof(codeBytes));
+    ret = ctrlUnmirror(alignedCodeAddr, alignedSrcAddr, alignedSize);
     if (R_FAILED(ret)) {
         printf("UNMIRROR FAILED: 0x%08lx\n", ret);
         return false;
