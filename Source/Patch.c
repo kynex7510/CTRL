@@ -19,13 +19,13 @@ Result ctrlPatch(const CTRLPatch* patch) {
         const size_t dataAvailable = (info.base_addr + info.size) - curAddr;
         const size_t dataToProcess = dataLeft < dataAvailable ? dataLeft : dataAvailable;
 
-        ret = ctrlChangePermission(curAddr, dataToProcess, (info.perm | MEMPERM_WRITE));
+        ret = ctrlChangePerms(curAddr, dataToProcess, (info.perm | MEMPERM_WRITE));
         if (R_FAILED(ret))
             return ret;
         
         memcpy((void*)curAddr, (void*)(patch->data + handledSize), dataToProcess);
 
-        ret = ctrlChangePermission(curAddr, dataToProcess, info.perm);
+        ret = ctrlChangePerms(curAddr, dataToProcess, info.perm);
         if (R_FAILED(ret))
             return ret;
 
@@ -33,7 +33,7 @@ Result ctrlPatch(const CTRLPatch* patch) {
         if (info.perm & MEMPERM_EXECUTE)
             type |= CTRL_ICACHE;
 
-        ret = ctrlFlushCache(curAddr, dataToProcess, type);
+        ret = ctrlFlushCache(type);
         if (R_FAILED(ret))
             return ret;
 

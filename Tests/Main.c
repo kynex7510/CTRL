@@ -110,14 +110,14 @@ static bool test2(void) {
     }
 
     // Make it executable.
-    ret = ctrlChangePermission(codeAddr, sizeof(codeBytes), MEMPERM_READEXECUTE);
+    ret = ctrlChangePerms(codeAddr, sizeof(codeBytes), MEMPERM_READEXECUTE);
     if (R_FAILED(ret)) {
         printf("PERM CHANGE FAILED: 0x%08lx\n", ret);
         return false;
     }
 
     // Flush instruction cache.
-    ret = ctrlFlushCache(codeAddr, sizeof(codeBytes), CTRL_ICACHE);
+    ret = ctrlFlushCache(CTRL_ICACHE);
     if (R_FAILED(ret)) {
         printf("CACHE FLUSH FAILED: 0x%08lx\n", ret);
         return false;

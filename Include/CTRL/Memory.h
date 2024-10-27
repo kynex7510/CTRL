@@ -12,11 +12,10 @@
 extern "C" {
 #endif // __cplusplus
 
-Result ctrlFlushCache(u32 addr, size_t size, size_t type);
-Result ctrlFlushEntireCache(size_t type);
+Result ctrlFlushCache(size_t type);
 Result ctrlQueryMemory(u32 addr, MemInfo* meminfo, PageInfo* pageinfo);
 Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
-Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm);
+Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms);
 Result ctrlMirror(u32 addr, u32 source, size_t size);
 Result ctrlUnmirror(u32 addr, u32 source, size_t size);
 

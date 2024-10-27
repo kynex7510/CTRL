@@ -26,20 +26,18 @@ static CTRL_INLINE void ctrl_flushInsnCache(void) {
     }
 }
 
-Result ctrlFlushCache(u32 addr, size_t size, size_t type) {
+Result ctrlFlushCache(size_t type) {
     if (type & CTRL_ICACHE)
         ctrl_flushInsnCache();
 
     if (type & CTRL_DCACHE) {
-        Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, addr, size);
+        Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, 1, DCACHE_THRESHOLD);
         if (R_FAILED(ret))
             return ret;
     }
 
     return 0;
 }
-
-Result ctrlFlushEntireCache(size_t type) { return ctrlFlushCache(1, DCACHE_THRESHOLD, type); }
 
 Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;
@@ -78,7 +76,7 @@ Result ctrlQueryRegion(u32 addr, MemInfo* memInfo) {
     return 0;
 }
 
-Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm) {
+Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
     if (ctrlDetectEnv() == Env_Citra)
         return 0;
 
@@ -89,7 +87,7 @@ Result ctrlChangePermission(u32 addr, size_t size, MemPerm perm) {
 
     const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
     const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
-    ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perm);
+    ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perms);
     svcCloseHandle(proc);
     return ret;
 }
