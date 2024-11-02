@@ -4,16 +4,6 @@ Low-level-ish library for playing around in usermode.
 
 ## Build
 
-### Make
-
 ```
-make
-```
-
-### CMake
-
-```
-mkdir Build
-cd Build
-$DEVKITPRO/devkitARM/bin/arm-none-eabi-cmake --toolchain "$DEVKITPRO/cmake/3DS.cmake" ..
+$DEVKITARM/bin/arm-none-eabi-cmake -B Build -DCMAKE_TOOLCHAIN_FILE="$DEVKITPRO/cmake/3DS.cmake"
 ```

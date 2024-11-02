@@ -1,5 +1,6 @@
 #include "CTRL/Memory.h"
 #include "CTRL/Hook.h"
+#include "CTRL/Exception.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -154,9 +155,26 @@ static bool test2(void) {
     return true;
 }
 
+static void exHandler(ERRF_ExceptionData* info) {
+    printf("Exception caught!\n");
+    printf("Skipping instruction...\n");
+    info->regs.pc += 4;
+}
+
+static bool test3(void) {
+    printf("=== EXCEPTION HANDLER TEST ===\n");
+    ctrlSetExceptionHandler(exHandler);
+    
+    asm("mov r0, #0");
+    asm("ldr r0, [r0]");
+
+    ctrlRemoveExceptionHandler();
+    return true;
+}
+
 int main(int argc, char* argv[]) {
     typedef bool(*Test_t)(void);
-    Test_t tests[] = { test1, test2 };
+    Test_t tests[] = { test1, test2, test3 };
 
     const size_t numTests = sizeof(tests) / sizeof(Test_t);
 
