@@ -25,7 +25,7 @@ ctrl_handleException:
     _ctrl_handleException_incHandlerCount:
     add r5, #0x04
     cmp r5, #0x34
-    bne _ctrl_handleException_callHandler
+    blt _ctrl_handleException_callHandler
 
     // Restore CPSR.
     ldr sp, [sp]
