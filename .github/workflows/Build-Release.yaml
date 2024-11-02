@@ -34,13 +34,15 @@ jobs:
         run: cmake --install ${{github.workspace}}/Build --prefix ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
 
       - name: Make ZIP
-        run: zip -r CTRL-${{github.sha}}.zip ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
+        run: |
+          cd ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
+          zip -r CTRL-${{github.sha}}.zip .
 
       - name: Upload Assets
         uses: softprops/action-gh-release@v2
         with:
           name: Release-${{github.sha}}
-          files: CTRL-${{github.sha}}.zip
+          files: ${{github.workspace}}/Build/${{env.BUILD_TYPE}}/CTRL-${{github.sha}}.zip
           fail_on_unmatched_files: true
           tag_name: Release-${{github.run_id}}
           make_latest: true
