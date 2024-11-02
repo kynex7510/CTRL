@@ -5,8 +5,11 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 project(CTRL LANGUAGES C ASM)
 
 file(GLOB CTRL_SOURCES Source/*.c Source/*.s)
-add_library(${PROJECT_NAME} STATIC ${CTRL_SOURCES})
-target_include_directories(${PROJECT_NAME} PUBLIC Include)
-target_compile_options(${PROJECT_NAME} PRIVATE -O3 -Wall -Wno-switch)
+add_library(CTRL STATIC ${CTRL_SOURCES})
+target_include_directories(CTRL PUBLIC Include)
+target_compile_options(CTRL PRIVATE -O3 -Wall -Wno-switch)
+
+install(TARGETS CTRL)
+install(DIRECTORY Include/CTRL DESTINATION include)
 
 add_subdirectory(Tests)

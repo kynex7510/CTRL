@@ -5,6 +5,8 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 project(CTRL-test)
 
 file(GLOB CTRL_TEST_SOURCES *.c)
-add_executable(${PROJECT_NAME} ${CTRL_TEST_SOURCES})
-target_link_libraries(${PROJECT_NAME} PUBLIC CTRL)
-ctr_create_3dsx(${PROJECT_NAME})
+add_executable(CTRL-test ${CTRL_TEST_SOURCES})
+target_link_libraries(CTRL-test PUBLIC CTRL)
+ctr_create_3dsx(CTRL-test)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/CTRL-test.3dsx TYPE BIN)
