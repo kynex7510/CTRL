@@ -12,9 +12,33 @@
 #define CODE_REGION_START 0x100000
 #define CODE_REGION_SIZE 0x3F00000
 
+static void exHandler0(ERRF_ExceptionData* info) {
+    printf("exHandler0(): This is called first (not handling)\n");
+}
+
+static void exHandler1(ERRF_ExceptionData* info) {
+    printf("exHandler1(): This is called last\n");
+    printf("Skipping instruction...\n");
+    info->regs.pc += 4;
+}
+
+static bool test1(void) {
+    printf("=== EXCEPTION HANDLER TEST ===\n");
+
+    ctrlSetExceptionHandler(exHandler1, CTRL_MAX_EX_HANDLERS - 1);
+    ctrlSetExceptionHandler(exHandler0, 0);
+    
+    asm("mov r0, #0");
+    asm("ldr r0, [r0]");
+
+    ctrlDisableExceptionHandling();
+    printf("SUCCESS\n");
+    return true;
+}
+
 static int myRand(void) { return RAND_EXPECTED_RET; }
 
-static bool test1() {
+static bool test2(void) {
     printf("=== HOOK TEST ===\n");
 
     CTRLHook hook;
@@ -59,7 +83,7 @@ static bool test1() {
     return true;
 }
 
-static bool test2(void) {
+static bool test3(void) {
     #define FUNC_PARAM_1 5
     #define FUNC_PARAM_2 3
 
@@ -152,23 +176,6 @@ static bool test2(void) {
     free(mem);
 
     printf("SUCCESS\n");
-    return true;
-}
-
-static void exHandler(ERRF_ExceptionData* info) {
-    printf("Exception caught!\n");
-    printf("Skipping instruction...\n");
-    info->regs.pc += 4;
-}
-
-static bool test3(void) {
-    printf("=== EXCEPTION HANDLER TEST ===\n");
-    ctrlSetExceptionHandler(exHandler);
-    
-    asm("mov r0, #0");
-    asm("ldr r0, [r0]");
-
-    ctrlRemoveExceptionHandler();
     return true;
 }
 
