@@ -34,7 +34,7 @@ jobs:
         run: cmake --install ${{github.workspace}}/Build --prefix ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
 
       - name: Make ZIP
-        run: zip -j CTRL-${{github.sha}}.zip ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
+        run: zip -r CTRL-${{github.sha}}.zip ${{github.workspace}}/Build/${{env.BUILD_TYPE}}
 
       - name: Upload Assets
         uses: softprops/action-gh-release@v2
