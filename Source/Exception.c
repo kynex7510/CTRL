@@ -46,7 +46,9 @@ bool ctrlSetExceptionHandler(CTRLExHandlerFn fn, size_t index) {
 
     u32* tls = (u32*)getThreadLocalStorage();
     tls[TLS_EX_CHAIN_SLOT + index] = (u32)fn;
-    ctrl_enableExHandlingImpl(tls);
+    if (!tls[TLS_EX_HANDLER_SLOT])
+        ctrl_enableExHandlingImpl(tls);
+
     return true;
 }
 
