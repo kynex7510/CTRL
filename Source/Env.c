@@ -3,18 +3,33 @@
 #define LUMA_TYPE 0x10000
 #define CITRA_TYPE 0x20000
 
-#define LUMA_SYSTEM_VERSION(major, minor, revision) (((major)<<24)|((minor)<<16)|((revision)<<8))
+#define NOT_INIT (CTRLEnv)-1
+
+#define LUMA_SYSTEM_VERSION(major, minor, revision) (((major) << 24) | ((minor) << 16) | ((revision) << 8))
+
+static s32 g_Env = NOT_INIT;
 
 CTRLEnv ctrlDetectEnv(void) {
-    s64 check = 0;
+    CTRLEnv env = (CTRLEnv)g_Env;
 
-    // Detect luma.
-    if (R_SUCCEEDED(svcGetSystemInfo(&check, LUMA_TYPE, 0)) && (check >= LUMA_SYSTEM_VERSION(8, 0, 0)))
-        return Env_Luma;
+    if (env == NOT_INIT) {
+        s64 check = 0;
 
-    // Detect citra.
-    if (R_SUCCEEDED(svcGetSystemInfo(&check, CITRA_TYPE, 0)) && (check == 1))
-        return Env_Citra;
+        if (R_SUCCEEDED(svcGetSystemInfo(&check, LUMA_TYPE, 0)) && (check >= LUMA_SYSTEM_VERSION(8, 0, 0))) {
+            // Detected luma 8.0.0+.
+            env = Env_Luma;
+        } else  if (R_SUCCEEDED(svcGetSystemInfo(&check, CITRA_TYPE, 0)) && (check == 1)) {
+            // Detected citra.
+            env = Env_Citra;
+        } else {
+            // Detected nothing.
+            env = Env_Unknown;
+        }
 
-    return Env_Unknown;
+        do {
+            __ldrex(&g_Env);
+        } while (__strex(&g_Env, (s32)env));
+    }
+
+    return env;
 }
