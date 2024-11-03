@@ -13,6 +13,7 @@ typedef void(*CTRLExHandlerFn)(ERRF_ExceptionData*);
 
 bool ctrlEnableExceptionHandling(void);
 void ctrlDisableExceptionHandling(void);
+bool ctrlExceptionHandlingIsSupported(void);
 
 bool ctrlSetExceptionHandler(CTRLExHandlerFn fn, size_t index);
 bool ctrlClearExceptionHandler(size_t index);

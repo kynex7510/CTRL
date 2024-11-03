@@ -25,14 +25,26 @@ static void exHandler1(ERRF_ExceptionData* info) {
 static bool test1(void) {
     printf("=== EXCEPTION HANDLER TEST ===\n");
 
-    ctrlSetExceptionHandler(exHandler1, CTRL_MAX_EX_HANDLERS - 1);
-    ctrlSetExceptionHandler(exHandler0, 0);
-    
-    asm("mov r0, #0");
-    asm("ldr r0, [r0]");
+    if (ctrlExceptionHandlingIsSupported()) {
+        if (!ctrlSetExceptionHandler(exHandler1, CTRL_MAX_EX_HANDLERS - 1)) {
+            printf("FAILED: could not set exception handler\n");
+            return false;
+        }
 
-    ctrlDisableExceptionHandling();
-    printf("SUCCESS\n");
+        if (!ctrlSetExceptionHandler(exHandler0, 0)) {
+            printf("FAILED: could not set exception handler\n");
+            return false;
+        }
+        
+        asm("mov r0, #0");
+        asm("ldr r0, [r0]");
+
+        ctrlDisableExceptionHandling();
+        printf("SUCCESS\n");
+    } else {
+        printf("SKIPPED (not supported)\n");
+    }
+
     return true;
 }
 
