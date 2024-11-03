@@ -6,6 +6,9 @@
 // R1 points to the start of context data.
 .type ctrl_handleException, %function
 ctrl_handleException:
+    // Reset exclusive monitor.
+    clrex
+
     // Save pointers.
     push {r1}
     mov r6, r0
