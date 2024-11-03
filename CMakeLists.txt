@@ -7,7 +7,7 @@ project(CTRL LANGUAGES C ASM)
 file(GLOB CTRL_SOURCES Source/*.c Source/*.s)
 add_library(CTRL STATIC ${CTRL_SOURCES})
 target_include_directories(CTRL PUBLIC Include)
-target_compile_options(CTRL PRIVATE -O3 -Wall -Wno-switch)
+target_compile_options(CTRL PRIVATE -O2 -Wall -Wno-switch)
 
 install(TARGETS CTRL)
 install(DIRECTORY Include/CTRL DESTINATION include)
