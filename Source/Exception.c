@@ -1,5 +1,5 @@
 #include "CTRL/Exception.h"
-#include "CTRL/Env.h"
+#include "CTRL/App.h"
 
 #define TLS_EX_HANDLER_SLOT 16
 #define TLS_EX_STACK_SLOT 17
@@ -29,6 +29,8 @@ static void ctrl_disableExHandlingImpl(u32* tls) {
     tls[TLS_EX_CTX_SLOT] = 0;
 }
 
+bool ctrlExceptionHandlingIsSupported(void) { return ctrlEnv() == Env_Luma; }
+
 bool ctrlEnableExceptionHandling(void) {
     if (ctrlExceptionHandlingIsSupported()) {
         u32* tls = (u32*)getThreadLocalStorage();
@@ -42,7 +44,6 @@ bool ctrlEnableExceptionHandling(void) {
 }
 
 void ctrlDisableExceptionHandling(void) { ctrl_disableExHandlingImpl((u32*)getThreadLocalStorage()); }
-bool ctrlExceptionHandlingIsSupported(void) { return ctrlDetectEnv() != Env_Citra; }
 
 bool ctrlSetExceptionHandler(CTRLExHandlerFn fn, size_t index) {
     if (!ctrlExceptionHandlingIsSupported() || (index >= CTRL_MAX_EX_HANDLERS))

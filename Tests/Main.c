@@ -1,6 +1,7 @@
 #include "CTRL/Memory.h"
 #include "CTRL/Hook.h"
 #include "CTRL/Exception.h"
+#include "CTRL/App.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,6 +13,20 @@
 #define CODE_REGION_START 0x100000
 #define CODE_REGION_SIZE 0x3F00000
 
+static bool test1(void) {
+    printf("=== APP INFO TEST ===\n");
+
+    const CTRLAppSectionInfo* info = ctrlAppSectionInfo();
+
+    printf("Total size: 0x%08x\n", info->textSize + info->rodataSize + info->dataSize);
+    printf("- .text: 0x%08x-0x%08x\n", info->textAddr, info->textAddr + info->textSize);
+    printf("- .rodata: 0x%08x-0x%08x\n", info->rodataAddr, info->rodataAddr + info->rodataSize);
+    printf("- .data: 0x%08x-0x%08x\n", info->dataAddr, info->dataAddr + info->dataSize);
+
+    printf("SUCCESS\n");
+    return true;
+}
+
 static void exHandler0(ERRF_ExceptionData* info) {
     printf("exHandler0(): This is called first (not handling)\n");
 }
@@ -22,7 +37,7 @@ static void exHandler1(ERRF_ExceptionData* info) {
     info->regs.pc += 4;
 }
 
-static bool test1(void) {
+static bool test2(void) {
     printf("=== EXCEPTION HANDLER TEST ===\n");
 
     if (ctrlExceptionHandlingIsSupported()) {
@@ -50,7 +65,7 @@ static bool test1(void) {
 
 static int myRand(void) { return RAND_EXPECTED_RET; }
 
-static bool test2(void) {
+static bool test3(void) {
     printf("=== HOOK TEST ===\n");
 
     CTRLHook hook;
@@ -95,7 +110,7 @@ static bool test2(void) {
     return true;
 }
 
-static bool test3(void) {
+static bool test4(void) {
     #define FUNC_PARAM_1 5
     #define FUNC_PARAM_2 3
 
@@ -193,7 +208,7 @@ static bool test3(void) {
 
 int main(int argc, char* argv[]) {
     typedef bool(*Test_t)(void);
-    Test_t tests[] = { test1, test2, test3 };
+    Test_t tests[] = { test1, test2, test3, test4 };
 
     const size_t numTests = sizeof(tests) / sizeof(Test_t);
 

@@ -7,20 +7,20 @@
  * -- It enforces permission checks, so MEMOP_PROT is a no-go; but it's "fine" as permissions arent really emulated.
  * - svcQueryMemory will never return whether the page is executable; svcQueryProcessMemory does.
  * -- Once again, citra doesn't have this limitation.
- * - HOS doesn't expose anything for cleaning the instruction cache.
+ * - Both luma and citra support cleaning the instruction cache.
  * - When mapping/unmapping svcControlProcessMemory expects a region of pages.
  * -- When unmapping, it's possible that the mirrored memory is made of multiple regions.
  */
 
 #include "CTRL/Memory.h"
-#include "CTRL/Env.h"
+#include "CTRL/App.h"
 
 #include <string.h>
 
 #define DCACHE_THRESHOLD 0x700000
 
 static CTRL_INLINE void ctrl_flushInsnCache(void) {
-    switch (ctrlDetectEnv()) {
+    switch (ctrlEnv()) {
         case Env_Luma:
         case Env_Citra:
             asm("svc 0x94");
@@ -79,7 +79,7 @@ Result ctrlQueryRegion(u32 addr, MemInfo* memInfo) {
 }
 
 Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
-    if (ctrlDetectEnv() == Env_Citra)
+    if (ctrlEnv() == Env_Citra)
         return 0;
 
     Handle proc;
@@ -97,7 +97,7 @@ Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
 Result ctrlMirror(u32 addr, u32 source, size_t size) {
     Result ret = 0;
 
-    if (ctrlDetectEnv() == Env_Citra) {
+    if (ctrlEnv() == Env_Citra) {
         u32 out;
         ret = svcControlMemory(&out, addr, source, size, MEMOP_MAP, MEMPERM_READWRITE);
     } else {
@@ -115,7 +115,7 @@ Result ctrlMirror(u32 addr, u32 source, size_t size) {
 
 Result ctrlUnmirror(u32 addr, u32 source, size_t size) {
     Result ret = 0;
-    bool isCitra = (ctrlDetectEnv() == Env_Citra);
+    bool isCitra = (ctrlEnv() == Env_Citra);
     Handle proc = CUR_PROCESS_HANDLE;
 
     if (!isCitra) {
