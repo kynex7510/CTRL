@@ -5,11 +5,11 @@
 
 #define CTRL_MAX_EX_HANDLERS 13
 
+typedef void(*CTRLExHandlerFn)(ERRF_ExceptionData*);
+
 #if defined(__cplusplus)
 extern "C" {
 #endif // __cplusplus
-
-typedef void(*CTRLExHandlerFn)(ERRF_ExceptionData*);
 
 bool ctrlExceptionHandlingIsSupported(void);
 bool ctrlEnableExceptionHandling(void);

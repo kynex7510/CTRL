@@ -3,10 +3,6 @@
 
 #include "CTRL/Types.h"
 
-#if defined(__cplusplus)
-extern "C" {
-#endif // __cplusplus
-
 typedef enum {
     Env_Luma,
     Env_Citra,
@@ -20,6 +16,10 @@ typedef struct {
     u32 dataAddr;
     size_t dataSize;
 } CTRLAppSectionInfo;
+
+#if defined(__cplusplus)
+extern "C" {
+#endif // __cplusplus
 
 CTRLEnv ctrlEnv(void);
 const CTRLAppSectionInfo* ctrlAppSectionInfo(void);
