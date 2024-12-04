@@ -1,6 +1,6 @@
 # CTRL
 
-Low level-ish library for playing around in usermode on the 3DS.
+3DS library containing utilities for hacking around in usermode.
 
 ## How-to
 

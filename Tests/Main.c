@@ -2,6 +2,7 @@
 #include "CTRL/Hook.h"
 #include "CTRL/Exception.h"
 #include "CTRL/App.h"
+#include "CTRL/CodeGen.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -10,10 +11,9 @@
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
 
-#define CODE_REGION_START 0x100000
-#define CODE_REGION_SIZE 0x3F00000
+/* APP INFO TEST */
 
-static bool test1(void) {
+static bool appInfoTest(void) {
     printf("=== APP INFO TEST ===\n");
 
     const CTRLAppSectionInfo* info = ctrlAppSectionInfo();
@@ -27,6 +27,8 @@ static bool test1(void) {
     return true;
 }
 
+/* EX TEST */
+
 static void exHandler0(ERRF_ExceptionData* info) {
     printf("exHandler0(): This is called first (not handling)\n");
 }
@@ -37,7 +39,7 @@ static void exHandler1(ERRF_ExceptionData* info) {
     info->regs.pc += 4;
 }
 
-static bool test2(void) {
+static bool exTest(void) {
     printf("=== EXCEPTION HANDLER TEST ===\n");
 
     if (ctrlExceptionHandlingIsSupported()) {
@@ -63,9 +65,109 @@ static bool test2(void) {
     return true;
 }
 
+/* CODEGEN TEST */
+
+static bool setupCodeBlock(CTRLCodeRegion* codeRegion, const u8* bytes, size_t size) {
+    u8* codeBlockData = ctrlAllocCodeBlock(codeRegion, size);
+    if (codeBlockData) {
+        memcpy(codeBlockData, bytes, size);
+        return true;
+    }
+
+    return false;
+}
+
+static bool codegenTest(void) {
+    #define FUNC_PARAM_1 5
+    #define FUNC_PARAM_2 3
+
+    const u8 codeAdd[] = {
+        0x08, 0x44, // ADD R0, R1
+        0x70, 0x47, // BX LR
+    };
+
+    const u8 codeSub[] = {
+        0x01, 0x00, 0x40, 0xE0, // SUB R0, R1
+        0x1E, 0xFF, 0x2F, 0xE1, // BX LR
+    };
+
+    printf("=== CODEGEN TEST ===\n");
+
+    CTRLCodeRegion codeRegion = NULL;
+
+    // Allocate code blocks.
+    if (!setupCodeBlock(&codeRegion, codeAdd, sizeof(codeAdd))) {
+        printf("ADD ALLOC FAILED\n");
+        return false;
+    }
+
+    if (!setupCodeBlock(&codeRegion, codeSub, sizeof(codeSub))) {
+        printf("SUB ALLOC FAILED\n");
+        return false;
+    }
+
+    // Commit code region.
+    Result ret = ctrlCommitCodeRegion(&codeRegion);
+    if (R_FAILED(ret)) {
+        printf("MAP FAILED: 0x%08lx\n", ret);
+        return false;
+    }
+
+    // Get address for the code blocks.
+    const u32 addCodeAddr = ctrlGetCodeBlock(&codeRegion, 0);
+    if (!addCodeAddr) {
+        printf("NO ADD CODE ADDR\n");
+        return false;
+    }
+
+    const u32 subCodeAddr = ctrlGetCodeBlock(&codeRegion, 1);
+    if (!subCodeAddr) {
+        printf("NO SUB CODE ADDR\n");
+        return false;
+    }
+
+    // Now we're ready to call the functions.
+    typedef int(*Fn_t)(int, int);
+    Fn_t f = (Fn_t)(addCodeAddr | 1); // Set bit 0 for thumb code.
+    printf("Doing addition\n");
+    int val = f(FUNC_PARAM_1, FUNC_PARAM_2);
+
+    printf("- Expected: %i\n", FUNC_PARAM_1 + FUNC_PARAM_2);
+    printf("- Got: %i\n", val);
+
+    if (val != (FUNC_PARAM_1 + FUNC_PARAM_2)) {
+        printf("ADD FAILED\n");
+        return false;
+    }
+
+    f = (Fn_t)subCodeAddr;
+    printf("Doing subtraction\n");
+    val = f(FUNC_PARAM_1, FUNC_PARAM_2);
+
+    printf("- Expected: %i\n", FUNC_PARAM_1 - FUNC_PARAM_2);
+    printf("- Got: %i\n", val);
+
+    if (val != (FUNC_PARAM_1 - FUNC_PARAM_2)) {
+        printf("SUB FAILED\n");
+        return false;
+    }
+
+    // Destroy code region.
+    ret = ctrlDestroyCodeRegion(&codeRegion);
+    if (R_FAILED(ret)) {
+        printf("DESTROY FAILED: 0x%08lx\n", ret);
+        return false;
+    }
+
+    printf("SUCCESS\n");
+    return true;
+}
+
+/* HOOK TEST */
+
 static int myRand(void) { return RAND_EXPECTED_RET; }
 
-static bool test3(void) {
+static bool hookTest(void) {
     printf("=== HOOK TEST ===\n");
 
     CTRLHook hook;
@@ -110,105 +212,11 @@ static bool test3(void) {
     return true;
 }
 
-static bool test4(void) {
-    #define FUNC_PARAM_1 5
-    #define FUNC_PARAM_2 3
-
-    const u8 codeBytes[] = {
-        0x08, 0x44, // ADD R0, R1
-        0x70, 0x47, // BX LR
-    };
-
-    printf("=== CODEGEN TEST ===\n");
-
-    // Allocate code buffer.
-    void* mem = aligned_alloc(CTRL_PAGE_SIZE, sizeof(codeBytes));
-    if (!mem) {
-        printf("ALLOC FAILED\n");
-        return false;
-    }
-
-    memcpy(mem, codeBytes, sizeof(codeBytes));
-
-    // Find address in CODE region where to map the code.
-    size_t queriedSize = 0;
-    while (queriedSize < CODE_REGION_SIZE) {
-        MemInfo info;
-        Result ret = ctrlQueryRegion(CODE_REGION_START + queriedSize, &info);
-        if (R_FAILED(ret)) {
-            printf("QUERY FAILED: 0x%08lx\n", ret);
-            return false;
-        }
-
-        if (info.state == MEMSTATE_FREE)
-            break;
-
-        queriedSize += info.size;
-    }
-
-    if (queriedSize >= CODE_REGION_SIZE) {
-        printf("NO SPACE AVAILABLE\n");
-        return false;
-    }
-
-    const u32 codeAddr = CODE_REGION_START + queriedSize;
-    printf("Found address in CODE region: 0x%08lx\n", codeAddr);
-
-    // Mirror code buffer to CODE region.
-    const u32 alignedCodeAddr = ctrlAlignAddr(codeAddr, CTRL_PAGE_SIZE);
-    const u32 alignedSrcAddr = ctrlAlignAddr((u32)mem, CTRL_PAGE_SIZE);
-    const u32 alignedSize = ctrlAlignSize(sizeof(codeBytes), CTRL_PAGE_SIZE);
-    Result ret = ctrlMirror(alignedCodeAddr, alignedSrcAddr, alignedSize);
-    if (R_FAILED(ret)) {
-        printf("MIRROR FAILED: 0x%08lx\n", ret);
-        return false;
-    }
-
-    // Make it executable.
-    ret = ctrlChangePerms(codeAddr, sizeof(codeBytes), MEMPERM_READEXECUTE);
-    if (R_FAILED(ret)) {
-        printf("PERM CHANGE FAILED: 0x%08lx\n", ret);
-        return false;
-    }
-
-    // Flush instruction cache.
-    ret = ctrlFlushCache(CTRL_ICACHE);
-    if (R_FAILED(ret)) {
-        printf("CACHE FLUSH FAILED: 0x%08lx\n", ret);
-        return false;
-    }
-
-    // Now we're ready to call the function.
-    printf("Calling function...\n");
-    typedef int(*Add_t)(int, int);
-    Add_t f = (Add_t)(codeAddr | 1); // Set bit 0 for thumb.
-    int val = f(5, 3);
-
-    printf("- Expected: %u\n", FUNC_PARAM_1 + FUNC_PARAM_2);
-    printf("- Got: %u\n", val);
-
-    if (val != (FUNC_PARAM_1 + FUNC_PARAM_2)) {
-        printf("FAILED\n");
-        return false;
-    }
-
-    // Unmirror buffer from CODE region.
-    ret = ctrlUnmirror(alignedCodeAddr, alignedSrcAddr, alignedSize);
-    if (R_FAILED(ret)) {
-        printf("UNMIRROR FAILED: 0x%08lx\n", ret);
-        return false;
-    }
-
-    // Free code buffer.
-    free(mem);
-
-    printf("SUCCESS\n");
-    return true;
-}
+/* Main */
 
 int main(int argc, char* argv[]) {
     typedef bool(*Test_t)(void);
-    Test_t tests[] = { test1, test2, test3, test4 };
+    Test_t tests[] = { appInfoTest, exTest, codegenTest, hookTest };
 
     const size_t numTests = sizeof(tests) / sizeof(Test_t);
 
