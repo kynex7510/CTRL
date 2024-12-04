@@ -139,8 +139,8 @@ Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
     return 0;
 }
 
-u32 ctrlFirstCodeBlock(const CTRLCodeRegion* region) {
-    const u32 codeBlock = (u32)*region + sizeof(RegionHeader) + sizeof(BlockHeader);
+u32 ctrlFirstCodeBlock(CTRLCodeRegion region) {
+    const u32 codeBlock = (u32)region + sizeof(RegionHeader) + sizeof(BlockHeader);
     const BlockHeader* b = (BlockHeader*)(codeBlock - sizeof(BlockHeader));
     return b->size ? codeBlock : 0;
 }
@@ -151,7 +151,19 @@ u32 ctrlNextCodeBlock(u32 codeBlock) {
     return nextB->size ? codeBlock + thisB->size + sizeof(BlockHeader) : 0;
 }
 
-u32 ctrlGetCodeBlock(const CTRLCodeRegion* region, size_t index) {
+size_t ctrlNumCodeBlocks(CTRLCodeRegion region) {
+    size_t num = 0;
+    u32 codeBlock = ctrlFirstCodeBlock(region);
+
+    while (codeBlock) {
+        ++num;
+        codeBlock = ctrlNextCodeBlock(codeBlock);
+    }
+
+    return num;
+}
+
+u32 ctrlGetCodeBlock(CTRLCodeRegion region, size_t index) {
     u32 codeBlock = ctrlFirstCodeBlock(region);
 
     for (size_t i = 0; codeBlock; ++i) {
