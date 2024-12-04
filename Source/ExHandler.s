@@ -24,12 +24,15 @@ ctrl_handleException:
     beq _ctrl_handleException_incHandlerCount
     mov r0, r6
     blx r1
+    cmp r0, #0
+    bne _ctrl_handleException_resume
 
     _ctrl_handleException_incHandlerCount:
     add r5, #0x04
     cmp r5, #0x34
     blt _ctrl_handleException_callHandler
 
+    _ctrl_handleException_resume:
     // Restore CPSR.
     ldr sp, [sp]
     ldr r0, [sp, #0x40]

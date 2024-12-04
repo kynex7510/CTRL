@@ -29,21 +29,34 @@ static bool appInfoTest(void) {
 
 /* EX TEST */
 
-static void exHandler0(ERRF_ExceptionData* info) {
+static bool exHandler0(ERRF_ExceptionData* info) {
     printf("exHandler0(): This is called first (not handling)\n");
+    return false;
 }
 
-static void exHandler1(ERRF_ExceptionData* info) {
+static bool exHandler1(ERRF_ExceptionData* info) {
     printf("exHandler1(): This is called last\n");
     printf("Skipping instruction...\n");
     info->regs.pc += 4;
+    return true;
+}
+
+static bool exHandler2(ERRF_ExceptionData* info) {
+    printf("exHandler2(): This should not be called\n");
+    svcBreak(USERBREAK_PANIC);
+    return false;
 }
 
 static bool exTest(void) {
     printf("=== EXCEPTION HANDLER TEST ===\n");
 
     if (ctrlExceptionHandlingIsSupported()) {
-        if (!ctrlSetExceptionHandler(exHandler1, CTRL_MAX_EX_HANDLERS - 1)) {
+        if (!ctrlSetExceptionHandler(exHandler2, CTRL_MAX_EX_HANDLERS - 1)) {
+            printf("FAILED: could not set exception handler\n");
+            return false;
+        }
+
+        if (!ctrlSetExceptionHandler(exHandler1, 1)) {
             printf("FAILED: could not set exception handler\n");
             return false;
         }
@@ -114,13 +127,13 @@ static bool codegenTest(void) {
     }
 
     // Get address for the code blocks.
-    const u32 addCodeAddr = ctrlGetCodeBlock(&codeRegion, 0);
+    const u32 addCodeAddr = ctrlGetCodeBlock(codeRegion, 0);
     if (!addCodeAddr) {
         printf("NO ADD CODE ADDR\n");
         return false;
     }
 
-    const u32 subCodeAddr = ctrlGetCodeBlock(&codeRegion, 1);
+    const u32 subCodeAddr = ctrlGetCodeBlock(codeRegion, 1);
     if (!subCodeAddr) {
         printf("NO SUB CODE ADDR\n");
         return false;
