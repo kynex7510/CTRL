@@ -3,7 +3,7 @@
 
 #include <string.h>
 
-Result ctrlPatch(const CTRLPatch* patch) {
+Result ctrlApplyPatch(const CTRLPatch* patch) {
     size_t handledSize = 0;
 
     while (handledSize < patch->size) {
@@ -38,16 +38,6 @@ Result ctrlPatch(const CTRLPatch* patch) {
             return ret;
 
         handledSize += dataToProcess;
-    }
-
-    return 0;
-}
-
-Result ctrlPatchMulti(const CTRLPatch* patches, size_t size) {
-    for (size_t i = 0; i < size; ++i) {
-        Result ret = ctrlPatch(&patches[i]);
-        if (R_FAILED(ret))
-            return ret;
     }
 
     return 0;
