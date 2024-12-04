@@ -3,6 +3,7 @@
 #include "CTRL/Exception.h"
 #include "CTRL/App.h"
 #include "CTRL/CodeGen.h"
+#include "CTRL/Arch.h"
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -141,7 +142,7 @@ static bool codegenTest(void) {
 
     // Now we're ready to call the functions.
     typedef int(*Fn_t)(int, int);
-    Fn_t f = (Fn_t)(addCodeAddr | 1); // Set bit 0 for thumb code.
+    Fn_t f = (Fn_t)(ctrlSetThumb(addCodeAddr));
     printf("Doing addition\n");
     int val = f(FUNC_PARAM_1, FUNC_PARAM_2);
 
