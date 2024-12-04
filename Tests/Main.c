@@ -188,7 +188,7 @@ static bool hookTest(void) {
     hook.callback = (u32)myRand;
 
     // Hook code.
-    Result ret = ctrlHook(&hook);
+    Result ret = ctrlPlaceHook(&hook);
     if (R_FAILED(ret)) {
         printf("HOOK FAILED: 0x%08lx\n", ret);
         return false;
@@ -205,7 +205,7 @@ static bool hookTest(void) {
     }
 
     // Unhook code.
-    ret = ctrlUnhook(&hook);
+    ret = ctrlRemoveHook(&hook);
     if (R_FAILED(ret)) {
         printf("UNHOOK FAILED: 0x%08lx\n", ret);
         return false;

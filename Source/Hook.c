@@ -10,7 +10,7 @@
 const u8 ARM_OP[4] = { 0x04, 0xF0, 0x1F, 0xE5 };   // LDR PC, [PC, #-4]
 const u8 THUMB_OP[4] = { 0x00, 0x4F, 0x38, 0x47 }; // LDR R7, [PC, #0]; BX R7
 
-Result ctrlHook(CTRLHook* hook) {
+Result ctrlPlaceHook(CTRLHook* hook) {
     u8 buffer[CTRL_HOOK_SIZE];
     memcpy(buffer, IS_THUMB(hook->addr) ? THUMB_OP : ARM_OP, 4);
     memcpy(&buffer[4], &hook->callback, sizeof(u32));
@@ -18,26 +18,6 @@ Result ctrlHook(CTRLHook* hook) {
     return ctrlPatchMemory(GET_REAL_ADDR(hook->addr), buffer, CTRL_HOOK_SIZE);
 }
 
-Result ctrlUnhook(const CTRLHook* hook) {
+Result ctrlRemoveHook(CTRLHook* hook) {
     return ctrlPatchMemory(GET_REAL_ADDR(hook->addr), hook->ogBytes, CTRL_HOOK_SIZE);
-}
-
-Result ctrlHookMulti(CTRLHook* hooks, size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        Result ret = ctrlHook(&hooks[i]);
-        if (R_FAILED(ret))
-            return ret;
-    }
-
-    return 0;
-}
-
-Result ctrlUnhookMulti(const CTRLHook* hooks, size_t size) {
-    for (size_t i = 0; i < size; i++) {
-        Result ret = ctrlUnhook(&hooks[i]);
-        if (R_FAILED(ret))
-            return ret;
-    }
-
-    return 0;
 }
