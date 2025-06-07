@@ -12,14 +12,14 @@
  * -- When unmapping, it's possible that the mirrored memory is made of multiple regions.
  */
 
-#include "CTRL/Memory.h"
-#include "CTRL/App.h"
+#include <CTRL/Memory.h>
+#include <CTRL/App.h>
 
 #include <string.h>
 
 #define DCACHE_THRESHOLD 0x700000
 
-static CTRL_INLINE void ctrl_flushInsnCache(void) {
+static inline void flushInsnCache(void) {
     switch (ctrlEnv()) {
         case Env_Luma:
         case Env_Citra:
@@ -30,10 +30,10 @@ static CTRL_INLINE void ctrl_flushInsnCache(void) {
 
 Result ctrlFlushCache(size_t type) {
     if (type & CTRL_ICACHE)
-        ctrl_flushInsnCache();
+        flushInsnCache();
 
     if (type & CTRL_DCACHE) {
-        Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, 1, DCACHE_THRESHOLD);
+        const Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, 1, DCACHE_THRESHOLD);
         if (R_FAILED(ret))
             return ret;
     }
@@ -45,7 +45,7 @@ Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;
     PageInfo dummy;
 
-    Result ret = svcQueryProcessMemory(&silly, &dummy, CUR_PROCESS_HANDLE, addr);
+    const Result ret = svcQueryProcessMemory(&silly, &dummy, CUR_PROCESS_HANDLE, addr);
     
     if (R_SUCCEEDED(ret)) {
         if (memInfo)

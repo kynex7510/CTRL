@@ -1,14 +1,15 @@
-#include "CTRL/Exception.h"
-#include "CTRL/App.h"
+#include <CTRL/Exception.h>
+#include <CTRL/App.h>
 
 #define TLS_EX_HANDLER_SLOT 16
 #define TLS_EX_STACK_SLOT 17
 #define TLS_EX_CTX_SLOT 18
 #define TLS_EX_CHAIN_SLOT 19
 
+// Defined in ExHandler.s.
 extern void ctrl_handleException(void);
 
-static bool ctrl_hasExHandlers(u32* tls) {
+static bool hasExHandlers(u32* tls) {
     for (size_t i = 0; i < CTRL_MAX_EX_HANDLERS; ++i) {
         if (tls[TLS_EX_CHAIN_SLOT + i])
             return true;
@@ -17,13 +18,13 @@ static bool ctrl_hasExHandlers(u32* tls) {
     return false;
 }
 
-static void ctrl_enableExHandlingImpl(u32* tls) {
+static void enableExHandlingImpl(u32* tls) {
     tls[TLS_EX_HANDLER_SLOT] = (u32)ctrl_handleException;
     tls[TLS_EX_STACK_SLOT] = 1; // Use faulty thread stack.
     tls[TLS_EX_CTX_SLOT] = 1; // Write context data to faulty thread stack.
 }
 
-static void ctrl_disableExHandlingImpl(u32* tls) {
+static void disableExHandlingImpl(u32* tls) {
     tls[TLS_EX_HANDLER_SLOT] = 0;
     tls[TLS_EX_STACK_SLOT] = 0;
     tls[TLS_EX_CTX_SLOT] = 0;
@@ -34,8 +35,8 @@ bool ctrlExceptionHandlingIsSupported(void) { return ctrlEnv() == Env_Luma; }
 bool ctrlEnableExceptionHandling(void) {
     if (ctrlExceptionHandlingIsSupported()) {
         u32* tls = (u32*)getThreadLocalStorage();
-        if (ctrl_hasExHandlers(tls)) {
-            ctrl_enableExHandlingImpl(tls);
+        if (hasExHandlers(tls)) {
+            enableExHandlingImpl(tls);
             return true;
         }
     }
@@ -43,7 +44,7 @@ bool ctrlEnableExceptionHandling(void) {
     return false;
 }
 
-void ctrlDisableExceptionHandling(void) { ctrl_disableExHandlingImpl((u32*)getThreadLocalStorage()); }
+void ctrlDisableExceptionHandling(void) { disableExHandlingImpl((u32*)getThreadLocalStorage()); }
 
 bool ctrlSetExceptionHandler(CTRLExHandlerFn fn, size_t index) {
     if (!ctrlExceptionHandlingIsSupported() || (index >= CTRL_MAX_EX_HANDLERS))
@@ -52,7 +53,7 @@ bool ctrlSetExceptionHandler(CTRLExHandlerFn fn, size_t index) {
     u32* tls = (u32*)getThreadLocalStorage();
     tls[TLS_EX_CHAIN_SLOT + index] = (u32)fn;
     if (!tls[TLS_EX_HANDLER_SLOT])
-        ctrl_enableExHandlingImpl(tls);
+        enableExHandlingImpl(tls);
 
     return true;
 }
@@ -63,8 +64,8 @@ bool ctrlClearExceptionHandler(size_t index) {
 
     u32* tls = (u32*)getThreadLocalStorage();
     tls[TLS_EX_CHAIN_SLOT + index] = 0;
-    if (!ctrl_hasExHandlers(tls))
-        ctrl_disableExHandlingImpl(tls);
+    if (!hasExHandlers(tls))
+        disableExHandlingImpl(tls);
 
     return true;
 }

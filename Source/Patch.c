@@ -1,7 +1,7 @@
-#include "CTRL/Patch.h"
-#include "CTRL/Memory.h"
+#include <CTRL/Patch.h>
+#include <CTRL/Memory.h>
 
-#include <string.h>
+#include <string.h> // memcpy
 
 Result ctrlApplyPatch(const CTRLPatch* patch) {
     size_t handledSize = 0;

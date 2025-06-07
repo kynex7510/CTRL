@@ -5,7 +5,7 @@
 #ifndef _CTRL_PATCH_H
 #define _CTRL_PATCH_H
 
-#include "CTRL/Types.h"
+#include <CTRL/Defs.h>
 
 /// @brief Patch definition.
 typedef struct {
@@ -14,16 +14,12 @@ typedef struct {
     size_t size;    ///< Patch size.
 } CTRLPatch;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif // __cplusplus
-
 /**
  * @brief Apply a patch.
  * @param[in] patch Patch to apply.
  * @return Result code.
  */
-Result ctrlApplyPatch(const CTRLPatch* patch);
+CTRL_EXTERN Result ctrlApplyPatch(const CTRLPatch* patch);
 
 /**
  * @brief Apply a memory patch.
@@ -39,9 +35,5 @@ CTRL_INLINE Result ctrlPatchMemory(u32 addr, const u8* data, size_t size) {
     patch.size = size;
     return ctrlApplyPatch(&patch);
 }
-
-#if defined(__cplusplus)
-}
-#endif // __cplusplus
 
 #endif /* _CTRL_PATCH_H */

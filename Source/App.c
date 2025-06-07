@@ -1,10 +1,13 @@
-#include "CTRL/App.h"
-#include "CTRL/Memory.h"
+#include <CTRL/App.h>
+#include <CTRL/Memory.h>
 
 #include <string.h>
 
-#define LUMA_TYPE 0x10000
-#define CITRA_TYPE 0x20000
+#define TYPE_LUMA_VERSION 0x10000
+#define TYPE_CITRA_EMULATOR_ID 0x20000
+
+#define EMULATOR_ID_CITRA 1
+#define EMULATOR_ID_AZAHAR 2
 
 #define TEXT_ADDR_TYPE 0x10005
 #define TEXT_SIZE_TYPE 0x10002
@@ -18,17 +21,19 @@
 static CTRLEnv g_Env;
 static CTRLAppSectionInfo g_AppSectionInfo;
 
-static CTRL_INLINE bool ctrl_detectEnv(CTRLEnv* env) {
+static inline bool isCitraKnownEmulator(u32 id) { return id == EMULATOR_ID_CITRA || id == EMULATOR_ID_AZAHAR; }
+
+static inline bool detectEnv(CTRLEnv* env) {
     s64 check = 0;
 
     // Detected luma 8.0.0+.
-    if (R_SUCCEEDED(svcGetSystemInfo(&check, LUMA_TYPE, 0)) && (check >= LUMA_SYSTEM_VERSION(8, 0, 0))) {
+    if (R_SUCCEEDED(svcGetSystemInfo(&check, TYPE_LUMA_VERSION, 0)) && (check >= LUMA_SYSTEM_VERSION(8, 0, 0))) {
         *env = Env_Luma;
         return true;
     }
     
     // Detected citra.
-    if (R_SUCCEEDED(svcGetSystemInfo(&check, CITRA_TYPE, 0)) && (check == 1)) {
+    if (R_SUCCEEDED(svcGetSystemInfo(&check, TYPE_CITRA_EMULATOR_ID, 0)) && isCitraKnownEmulator(check)) {
         *env = Env_Citra;
         return true;
     }
@@ -36,15 +41,15 @@ static CTRL_INLINE bool ctrl_detectEnv(CTRLEnv* env) {
     return false;
 }
 
-static CTRL_INLINE Result ctrl_getAppSectionInfo(CTRLAppSectionInfo* out) {
+static inline Result getAppSectionInfo(CTRLAppSectionInfo* out) {
     s64 tmp;
     Result ret;
 
-#define READ_INFO(type, outMember) \
+#define READ_INFO(type, outMember)                               \
     ret = svcGetProcessInfo(&tmp, CUR_PROCESS_HANDLE, ((type))); \
-    if (R_FAILED(ret)) \
-        return ret; \
-    \
+    if (R_FAILED(ret))                                           \
+        return ret;                                              \
+                                                                 \
     outMember = tmp;
 
     READ_INFO(TEXT_ADDR_TYPE, out->textAddr);
@@ -58,13 +63,13 @@ static CTRL_INLINE Result ctrl_getAppSectionInfo(CTRLAppSectionInfo* out) {
     return 0;
 }
 
-static __attribute((constructor)) void ctrl_initEnv(void) {
-    if (!ctrl_detectEnv(&g_Env))
+static __attribute((constructor)) void initEnv(void) {
+    if (!detectEnv(&g_Env))
         svcBreak(USERBREAK_PANIC);
 }
 
-static __attribute((constructor)) void ctrl_initAppSectionInfo(void) {
-    if (R_FAILED(ctrl_getAppSectionInfo(&g_AppSectionInfo)))
+static __attribute((constructor)) void initAppSectionInfo(void) {
+    if (R_FAILED(getAppSectionInfo(&g_AppSectionInfo)))
         svcBreak(USERBREAK_PANIC);
 }
 

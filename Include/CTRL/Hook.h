@@ -5,7 +5,7 @@
 #ifndef _CTRL_HOOK_H
 #define _CTRL_HOOK_H
 
-#include "CTRL/Types.h"
+#include <CTRL/Defs.h>
 
 #define CTRL_HOOK_SIZE 8    ///< Size for hook instructions
 
@@ -16,26 +16,18 @@ typedef struct {
     u8 ogBytes[CTRL_HOOK_SIZE]; ///< Original bytes, (internal use only).
 } CTRLHook;
 
-#if defined(__cplusplus)
-extern "C" {
-#endif // __cplusplus
-
 /**
  * @brief Place hook.
  * @param[in, out] hook Hook to place.
  * @return Result code.
  */
-Result ctrlPlaceHook(CTRLHook* hook);
+CTRL_EXTERN Result ctrlPlaceHook(CTRLHook* hook);
 
 /**
  * @brief Remove hook.
  * @param[in, out] hook Hook to remove.
  * @return Result code.
  */
-Result ctrlRemoveHook(CTRLHook* hook);
-
-#if defined(__cplusplus)
-}
-#endif // __cplusplus
+CTRL_EXTERN Result ctrlRemoveHook(CTRLHook* hook);
 
 #endif /* _CTRL_HOOK_H */

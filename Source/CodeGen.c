@@ -1,6 +1,6 @@
-#include "CTRL/CodeGen.h"
-#include "CTRL/App.h"
-#include "CTRL/Memory.h"
+#include <CTRL/CodeGen.h>
+#include <CTRL/App.h>
+#include <CTRL/Memory.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +20,7 @@ typedef struct {
     u32 regionSize;
 } RegionHeader;
 
-static void* ctrl_alignedRealloc(void *p, size_t newSize, size_t alignment) {
+static inline void* alignedRealloc(void *p, size_t newSize, size_t alignment) {
     void* q = aligned_alloc(alignment, newSize);
     if (q) {
         const size_t ogSize = malloc_usable_size(p);
@@ -31,7 +31,7 @@ static void* ctrl_alignedRealloc(void *p, size_t newSize, size_t alignment) {
     return q;
 }
 
-static Result ctrl_findAddressForCodeMirror(size_t size, u32* out) {
+static inline Result findAddressForCodeMirror(size_t size, u32* out) {
     size_t queriedSize = 0;
     while (queriedSize < CODE_REGION_SIZE) {
         MemInfo info;
@@ -75,7 +75,7 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     // Add space for code block.
     RegionHeader* r = (RegionHeader*)*region;
     const size_t newSize = r->regionSize + sizeof(BlockHeader) + size;
-    r = ctrl_alignedRealloc(r, newSize, CTRL_PAGE_SIZE);
+    r = alignedRealloc(r, newSize, CTRL_PAGE_SIZE);
     if (!r)
         return 0;
 
@@ -95,7 +95,7 @@ Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
 
     // Compute the base address.
     u32 baseAddr = 0;
-    Result ret = ctrl_findAddressForCodeMirror(r->regionSize, &baseAddr);
+    Result ret = findAddressForCodeMirror(r->regionSize, &baseAddr);
     if (R_FAILED(ret))
         return ret;
 

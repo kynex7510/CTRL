@@ -19,10 +19,10 @@ static bool appInfoTest(void) {
 
     const CTRLAppSectionInfo* info = ctrlAppSectionInfo();
 
-    printf("Total size: 0x%08x\n", info->textSize + info->rodataSize + info->dataSize);
-    printf("- .text: 0x%08x-0x%08x\n", info->textAddr, info->textAddr + info->textSize);
-    printf("- .rodata: 0x%08x-0x%08x\n", info->rodataAddr, info->rodataAddr + info->rodataSize);
-    printf("- .data: 0x%08x-0x%08x\n", info->dataAddr, info->dataAddr + info->dataSize);
+    printf("Total size: 0x%08X\n", info->textSize + info->rodataSize + info->dataSize);
+    printf("- .text: 0x%08X-0x%08X\n", info->textAddr, info->textAddr + info->textSize);
+    printf("- .rodata: 0x%08X-0x%08X\n", info->rodataAddr, info->rodataAddr + info->rodataSize);
+    printf("- .data: 0x%08X-0x%08X\n", info->dataAddr, info->dataAddr + info->dataSize);
 
     printf("SUCCESS\n");
     return true;
@@ -270,8 +270,8 @@ int main(int argc, char* argv[]) {
         if (kDown & KEY_START)
             break;
 
-        gspWaitForVBlank();
         gfxSwapBuffers();
+        gspWaitForVBlank();
     }
 
     gfxExit();
