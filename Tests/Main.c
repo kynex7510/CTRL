@@ -12,6 +12,8 @@
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
 
+u32 __ctrl_code_allocator_pages = 1; // Reserve 4kb of memory for code allocation.
+
 /* APP INFO TEST */
 
 static bool appInfoTest(void) {

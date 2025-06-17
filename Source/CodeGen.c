@@ -1,56 +1,21 @@
 #include <CTRL/CodeGen.h>
-#include <CTRL/App.h>
+#include <CTRL/CodeAllocator.h>
 #include <CTRL/Memory.h>
 
-#include <stdlib.h>
-#include <string.h>
-#include <malloc.h>
+#include <stdlib.h> // malloc, free, realloc
+#include <string.h> // memcpy
 
-#define CODE_REGION_START 0x100000
-#define CODE_REGION_SIZE 0x3F00000
-
-#define ERR_NO_MEM MAKERESULT(RL_PERMANENT, RS_OUTOFRESOURCE, RM_APPLICATION, RD_OUT_OF_MEMORY);
+#define ERR_NO_MEM MAKERESULT(RL_FATAL, RS_OUTOFRESOURCE, RM_APPLICATION, RD_OUT_OF_MEMORY);
 
 typedef struct {
     u32 size;
 } BlockHeader;
 
 typedef struct {
-    u32 sourceAddr;
+    void* heapObj;
+    u32 allocAddr;
     u32 regionSize;
 } RegionHeader;
-
-static inline void* alignedRealloc(void *p, size_t newSize, size_t alignment) {
-    void* q = aligned_alloc(alignment, newSize);
-    if (q) {
-        const size_t ogSize = malloc_usable_size(p);
-        memcpy(q, p, ogSize < newSize ? ogSize : newSize);
-        free(p);
-    }
-
-    return q;
-}
-
-static inline Result findAddressForCodeMirror(size_t size, u32* out) {
-    size_t queriedSize = 0;
-    while (queriedSize < CODE_REGION_SIZE) {
-        MemInfo info;
-        Result ret = ctrlQueryRegion(CODE_REGION_START + queriedSize, &info);
-        if (R_FAILED(ret))
-            return ret;
-
-        if (info.state == MEMSTATE_FREE && info.size >= size)
-            break;
-
-        queriedSize += info.size;
-    }
-
-    if (queriedSize >= CODE_REGION_SIZE)
-        return ERR_NO_MEM;
-
-    *out = CODE_REGION_START + queriedSize;
-    return 0;
-}
 
 u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     // Align code block size to word.
@@ -60,11 +25,12 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     if (!*region) {
         // A dummy block of size zero tells when the chain ends.
         const size_t newSize = sizeof(RegionHeader) + sizeof(BlockHeader) * 2 + size;
-        RegionHeader* r = aligned_alloc(CTRL_PAGE_SIZE, newSize);
+        RegionHeader* r = malloc(newSize);
         if (!r)
-            return 0;
+            return NULL;
 
-        r->sourceAddr = (u32)r;
+        r->heapObj = NULL;
+        r->allocAddr = 0;
         r->regionSize = newSize;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader)))->size = size;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader) + size))->size = 0;
@@ -75,14 +41,16 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     // Add space for code block.
     RegionHeader* r = (RegionHeader*)*region;
     const size_t newSize = r->regionSize + sizeof(BlockHeader) + size;
-    r = alignedRealloc(r, newSize, CTRL_PAGE_SIZE);
+    r = realloc(r, newSize);
     if (!r)
-        return 0;
+        return NULL;
 
     // Write block info: last block gets allocated, and new block becomes the zero block.
     const size_t offsetToLastBlock = r->regionSize - sizeof(BlockHeader);
     const size_t offsetToNewBlock = newSize - sizeof(BlockHeader);
-    r->sourceAddr = (u32)r;
+
+    r->heapObj = NULL;
+    r->allocAddr = 0;
     r->regionSize = newSize;
     ((BlockHeader*)((u32)r + offsetToLastBlock))->size = size;
     ((BlockHeader*)((u32)r + offsetToNewBlock))->size = 0;
@@ -92,49 +60,58 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
 
 Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
     RegionHeader* r = (RegionHeader*)*region;
+    const size_t numPages = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE) >> 12;
 
-    // Compute the base address.
-    u32 baseAddr = 0;
-    Result ret = findAddressForCodeMirror(r->regionSize, &baseAddr);
+    // Allocate code pages.
+    Result ret = ctrlAllocCodePages(numPages, &r->allocAddr);
     if (R_FAILED(ret))
         return ret;
 
-    // Map code.
-    const u32 sourceAddr = r->sourceAddr;
-    const size_t regionSize = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE);
-    ret = ctrlMirror(baseAddr, sourceAddr, regionSize);
-    if (R_FAILED(ret))
-        return ret;
+    // Copy data.
+    memcpy((void*)r->allocAddr, r, r->regionSize);
+    r->heapObj = r;
 
-    // Make it executable.
-    ret = ctrlChangePerms(baseAddr, regionSize, MEMPERM_READEXECUTE);
+    // Commit code pages.
+    u32 commitAddr = 0;
+    ret = ctrlCommitCodePages(r->allocAddr, numPages, &commitAddr);
     if (R_FAILED(ret)) {
-        ctrlUnmirror(baseAddr, sourceAddr, regionSize);
+        ctrlFreeCodePages(r->allocAddr, numPages);
+        r->heapObj = NULL;
+        r->allocAddr = 0;
         return ret;
     }
 
-    // Flush cache.
-    ret = ctrlFlushCache(CTRL_ICACHE | CTRL_DCACHE);
-    if (R_FAILED(ret)) {
-        ctrlUnmirror(baseAddr, sourceAddr, regionSize);
-        return ret;
+    // Resize heap object to save space.
+    const u32 allocAddr = r->allocAddr;
+    r = realloc(r, sizeof(RegionHeader));
+    if (!r) {
+        ctrlReleaseCodePages(allocAddr, commitAddr, numPages);
+        ctrlFreeCodePages(allocAddr, numPages);
+        r->heapObj = NULL;
+        r->allocAddr = 0;
+        return ERR_NO_MEM;
     }
 
-    *region = (CTRLCodeRegion)baseAddr;
+    *region = (CTRLCodeRegion)commitAddr;
     return ret;
 }
 
 Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
     const RegionHeader* r = (RegionHeader*)*region;
-    const u32 baseAddr = (u32)*region;
-    const u32 sourceAddr = r->sourceAddr;
-    const u32 regionSize = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE);
+    void* const heapObj = r->heapObj;
+    const u32 allocAddr = r->allocAddr;
+    const u32 commitAddr = (u32)*region;
+    const size_t numPages = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE) >> 12;
 
-    Result ret = ctrlUnmirror(baseAddr, sourceAddr, regionSize);
+    Result ret = ctrlReleaseCodePages(allocAddr, commitAddr, numPages);
     if (R_FAILED(ret))
         return ret;
 
-    free((void*)sourceAddr);
+    ret = ctrlFreeCodePages(allocAddr, numPages);
+    if (R_FAILED(ret))
+        return ret;
+
+    free(heapObj);
     *region = NULL;
     return 0;
 }
