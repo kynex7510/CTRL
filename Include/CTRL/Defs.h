@@ -12,7 +12,7 @@
 #define CTRL_EXTERN extern "C"
 #else
 #define CTRL_INLINE static inline
-#define CTRL_EXTERN extern
+#define CTRL_EXTERN
 #endif // __cplusplus
 
 /**

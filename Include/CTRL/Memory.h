@@ -9,15 +9,15 @@
 
 #define CTRL_PAGE_SIZE 0x1000 ///< Page size
 
-#define CTRL_ICACHE 0x01 ///< Instruction cache flag
-#define CTRL_DCACHE 0x02 ///< Data cache flag
+/**
+ * @brief Flush entire processor data cache.
+ */
+CTRL_EXTERN void ctrlFlushDataCache(void);
 
 /**
- * @brief Flush processor cache.
- * @param[in] type Flush type (ICACHE, DCACHE or both).
- * @return Result code.
+ * @brief Invalidate entire processor instruction cache.
  */
-CTRL_EXTERN Result ctrlFlushCache(size_t type);
+CTRL_EXTERN void ctrlInvalidateInstructionCache(void);
 
 /**
  * @brief Get informations about a page.

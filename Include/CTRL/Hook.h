@@ -7,13 +7,13 @@
 
 #include <CTRL/Defs.h>
 
-#define CTRL_HOOK_SIZE 8    ///< Size for hook instructions
+#define CTRL_HOOK_SIZE 8    ///< Size for hook instructions.
 
 /// @brief Hook definition.
 typedef struct {
     u32 addr;                   ///< Target address.
     u32 callback;               ///< Hook callback.
-    u8 ogBytes[CTRL_HOOK_SIZE]; ///< Original bytes, (internal use only).
+    u8 ogBytes[CTRL_HOOK_SIZE]; ///< Original bytes (internal use only).
 } CTRLHook;
 
 /**

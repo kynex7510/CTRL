@@ -7,7 +7,7 @@
  * -- It enforces permission checks, so MEMOP_PROT is a no-go; but it's "fine" as permissions arent really emulated.
  * - svcQueryMemory will never return whether the page is executable; svcQueryProcessMemory does.
  * -- Once again, citra doesn't have this limitation.
- * - Both luma and citra support cleaning the instruction cache.
+ * - Both luma and citra support invalidating the instruction cache.
  * - When mapping/unmapping svcControlProcessMemory expects a region of pages.
  * -- When unmapping, it's possible that the mirrored memory is made of multiple regions.
  */
@@ -15,31 +15,10 @@
 #include <CTRL/Memory.h>
 #include <CTRL/App.h>
 
-#include <string.h>
+#include <string.h> // memcpy
 
-#define DCACHE_THRESHOLD 0x700000
-
-static inline void flushInsnCache(void) {
-    switch (ctrlEnv()) {
-        case Env_Luma:
-        case Env_Citra:
-            asm("svc 0x94");
-            return;
-    }
-}
-
-Result ctrlFlushCache(size_t type) {
-    if (type & CTRL_ICACHE)
-        flushInsnCache();
-
-    if (type & CTRL_DCACHE) {
-        const Result ret = svcFlushProcessDataCache(CUR_PROCESS_HANDLE, 1, DCACHE_THRESHOLD);
-        if (R_FAILED(ret))
-            return ret;
-    }
-
-    return 0;
-}
+void ctrlFlushDataCache(void) { asm("svc 0x92"); }
+void ctrlInvalidateInstructionCache(void) { asm("svc 0x94"); }
 
 Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;

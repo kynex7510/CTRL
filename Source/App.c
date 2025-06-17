@@ -1,8 +1,6 @@
 #include <CTRL/App.h>
 #include <CTRL/Memory.h>
 
-#include <string.h>
-
 #define TYPE_LUMA_VERSION 0x10000
 #define TYPE_CITRA_EMULATOR_ID 0x20000
 
