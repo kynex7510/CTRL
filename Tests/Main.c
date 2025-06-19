@@ -13,7 +13,7 @@
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
 
-// Reserve 1 page (4kb) of heap memory allocating code.
+// Reserve 1 page (4kb) of heap memory for code allocation.
 size_t __ctrl_code_allocator_pages = 1;
 
 /* APP INFO TEST */
