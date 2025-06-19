@@ -7,7 +7,7 @@
 
 #include <CTRL/Defs.h>
 
-#define CTRL_HOOK_SIZE 8    ///< Size for hook instructions.
+#define CTRL_HOOK_SIZE 8 ///< Size for hook instructions.
 
 /// @brief Hook definition.
 typedef struct {

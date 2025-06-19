@@ -5,14 +5,11 @@
 #include <stdlib.h> // malloc, free, realloc
 #include <string.h> // memcpy
 
-#define ERR_NO_MEM MAKERESULT(RL_FATAL, RS_OUTOFRESOURCE, RM_APPLICATION, RD_OUT_OF_MEMORY);
-
 typedef struct {
     u32 size;
 } BlockHeader;
 
 typedef struct {
-    void* heapObj;
     u32 allocAddr;
     u32 regionSize;
 } RegionHeader;
@@ -29,7 +26,6 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
         if (!r)
             return NULL;
 
-        r->heapObj = NULL;
         r->allocAddr = 0;
         r->regionSize = newSize;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader)))->size = size;
@@ -49,7 +45,6 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     const size_t offsetToLastBlock = r->regionSize - sizeof(BlockHeader);
     const size_t offsetToNewBlock = newSize - sizeof(BlockHeader);
 
-    r->heapObj = NULL;
     r->allocAddr = 0;
     r->regionSize = newSize;
     ((BlockHeader*)((u32)r + offsetToLastBlock))->size = size;
@@ -60,7 +55,7 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
 
 Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
     RegionHeader* r = (RegionHeader*)*region;
-    const size_t numPages = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE) >> 12;
+    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
 
     // Allocate code pages.
     Result ret = ctrlAllocCodePages(numPages, &r->allocAddr);
@@ -69,39 +64,26 @@ Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
 
     // Copy data.
     memcpy((void*)r->allocAddr, r, r->regionSize);
-    r->heapObj = r;
 
     // Commit code pages.
     u32 commitAddr = 0;
     ret = ctrlCommitCodePages(r->allocAddr, numPages, &commitAddr);
     if (R_FAILED(ret)) {
         ctrlFreeCodePages(r->allocAddr, numPages);
-        r->heapObj = NULL;
         r->allocAddr = 0;
         return ret;
     }
 
-    // Resize heap object to save space.
-    const u32 allocAddr = r->allocAddr;
-    r = realloc(r, sizeof(RegionHeader));
-    if (!r) {
-        ctrlReleaseCodePages(allocAddr, commitAddr, numPages);
-        ctrlFreeCodePages(allocAddr, numPages);
-        r->heapObj = NULL;
-        r->allocAddr = 0;
-        return ERR_NO_MEM;
-    }
-
+    free(r);
     *region = (CTRLCodeRegion)commitAddr;
     return ret;
 }
 
 Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
     const RegionHeader* r = (RegionHeader*)*region;
-    void* const heapObj = r->heapObj;
     const u32 allocAddr = r->allocAddr;
-    const u32 commitAddr = (u32)*region;
-    const size_t numPages = ctrlAlignSize(r->regionSize, CTRL_PAGE_SIZE) >> 12;
+    const u32 commitAddr = (u32)r;
+    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
 
     Result ret = ctrlReleaseCodePages(allocAddr, commitAddr, numPages);
     if (R_FAILED(ret))
@@ -111,7 +93,6 @@ Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
     if (R_FAILED(ret))
         return ret;
 
-    free(heapObj);
     *region = NULL;
     return 0;
 }

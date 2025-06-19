@@ -7,7 +7,6 @@ project(CTRL LANGUAGES C ASM)
 option(CTRL_BUILD_TESTS "Enable tests compilation" OFF)
 
 set(CTRL_SOURCES
-    Source/AllocateHeaps.c
     Source/App.c
     Source/CodeAllocator.c
     Source/CodeGen.c

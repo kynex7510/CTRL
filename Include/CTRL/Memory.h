@@ -10,6 +10,18 @@
 #define CTRL_PAGE_SIZE 0x1000 ///< Page size
 
 /**
+ * @brief Convert size in bytes into number of pages.
+ * @return Number of pages.
+ */
+CTRL_INLINE size_t ctrlSizeToNumPages(size_t size) { return ctrlAlignSize(size, CTRL_PAGE_SIZE) >> 12; }
+
+/**
+ * @brief Convert number of pages into size in bytes.
+ * @return Size in bytes.
+ */
+CTRL_INLINE size_t ctrlNumPagesToSize(size_t numPages) { return numPages << 12; }
+
+/**
  * @brief Flush entire processor data cache.
  */
 CTRL_EXTERN void ctrlFlushDataCache(void);

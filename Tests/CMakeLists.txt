@@ -4,7 +4,7 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 project(CTRL-test)
 
-file(GLOB CTRL_TEST_SOURCES *.c)
+set (CTRL_TEST_SOURCES Main.c)
 add_executable(CTRL-test ${CTRL_TEST_SOURCES})
 target_link_libraries(CTRL-test PUBLIC CTRL)
 ctr_create_3dsx(CTRL-test)

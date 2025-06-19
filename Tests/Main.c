@@ -1,9 +1,10 @@
-#include "CTRL/Memory.h"
-#include "CTRL/Hook.h"
-#include "CTRL/Exception.h"
-#include "CTRL/App.h"
-#include "CTRL/CodeGen.h"
-#include "CTRL/Arch.h"
+#include <CTRL/Memory.h>
+#include <CTRL/Hook.h>
+#include <CTRL/Exception.h>
+#include <CTRL/App.h>
+#include <CTRL/CodeGen.h>
+#include <CTRL/CodeAllocator.h>
+#include <CTRL/Arch.h>
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -12,7 +13,8 @@
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
 
-u32 __ctrl_code_allocator_pages = 1; // Reserve 4kb of memory for code allocation.
+// Reserve 1 page (4kb) of heap memory allocating code.
+size_t __ctrl_code_allocator_pages = 1;
 
 /* APP INFO TEST */
 
