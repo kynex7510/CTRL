@@ -46,7 +46,7 @@ CTRL_EXTERN Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInf
  * @param[out] memInfo Range info.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
+CTRL_EXTERN Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo);
 
 /**
  * @brief Change permissions on a range of pages.
@@ -55,24 +55,24 @@ CTRL_EXTERN Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
  * @param[in] perms New permissions.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms);
+CTRL_EXTERN Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms);
 
 /**
- * @brief Mirror a range of pages to a different address.
- * @param[in] addr Mirror address, must be page aligned.
- * @param[in] source Source address, must be page aligned.
+ * @brief Remap a range of pages as read-write.
+ * @param[in] addr Source address, must be page aligned.
+ * @param[in] alias Alias address, must be page aligned.
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlMirror(u32 addr, u32 source, size_t size);
+CTRL_EXTERN Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size);
 
 /**
- * @brief Unmirror a range of pages.
- * @param[in] addr Mirror address, must be page aligned.
- * @param[in] source Source address, must be page aligned.
+ * @brief Restore aliased memory.
+ * @param[in] addr Source address, must be page aligned.
+ * @param[in] alias Alias address, must be page aligned.
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlUnmirror(u32 addr, u32 source, size_t size);
+CTRL_EXTERN Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size);
 
 #endif /* _CTRL_MEMORY_H */

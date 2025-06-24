@@ -103,7 +103,7 @@ Result ctrlAllocCodePages(size_t numPages, u32* outAddr) {
     u32 base = codeAllocBegin;
 
     while (base < codeAllocEnd) {
-        Result ret = ctrlQueryRegion(base, &info);
+        Result ret = ctrlQueryMemoryRegion(base, &info);
         if (R_FAILED(ret))
             return ret;
 
@@ -134,15 +134,15 @@ Result ctrlCommitCodePages(u32 allocAddr, size_t numPages, u32* outCommitAddr) {
     const u32 commitAddr = allocAddr - codeAllocBase + detectCodeRegionStart();
     const size_t size = ctrlNumPagesToSize(numPages);
 
-    // Map code.
-    Result ret = ctrlMirror(commitAddr, allocAddr, size);
+    // Alias code into code region.
+    Result ret = ctrlMapAliasMemory(allocAddr, commitAddr, size);
     if (R_FAILED(ret))
         return ret;
 
     // Make it executable.
-    ret = ctrlChangePerms(commitAddr, size, MEMPERM_READEXECUTE);
+    ret = ctrlChangeMemoryPerms(commitAddr, size, MEMPERM_READEXECUTE);
     if (R_FAILED(ret)) {
-        ctrlUnmirror(commitAddr, allocAddr, size);
+        ctrlUnmapAliasMemory(allocAddr, commitAddr, size);
         return ret;
     }
 
@@ -155,5 +155,5 @@ Result ctrlCommitCodePages(u32 allocAddr, size_t numPages, u32* outCommitAddr) {
 }
 
 Result ctrlReleaseCodePages(u32 allocAddr, u32 commitAddr, size_t numPages) {
-    return ctrlUnmirror(commitAddr, allocAddr, ctrlNumPagesToSize(numPages));
+    return ctrlUnmapAliasMemory(allocAddr, commitAddr, ctrlNumPagesToSize(numPages));
 }

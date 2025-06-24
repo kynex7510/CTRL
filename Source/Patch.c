@@ -11,7 +11,7 @@ Result ctrlApplyPatch(const CTRLPatch* patch) {
         const u32 curAddr = patch->addr + handledSize;
         const size_t dataLeft = patch->size - handledSize;
 
-        Result ret = ctrlQueryRegion(curAddr, &info);
+        Result ret = ctrlQueryMemoryRegion(curAddr, &info);
         if (R_FAILED(ret))
             return ret;
 
@@ -21,7 +21,7 @@ Result ctrlApplyPatch(const CTRLPatch* patch) {
 
         // Make sure the target address is writable.
         if (!(info.perm & MEMPERM_WRITE)) {
-            ret = ctrlChangePerms(curAddr, dataToProcess, (info.perm | MEMPERM_WRITE));
+            ret = ctrlChangeMemoryPerms(curAddr, dataToProcess, (info.perm | MEMPERM_WRITE));
             if (R_FAILED(ret))
                 return ret;
         }
@@ -31,7 +31,7 @@ Result ctrlApplyPatch(const CTRLPatch* patch) {
 
         // Restore protection flags if necessary.
         if (!(info.perm & MEMPERM_WRITE)) {
-            ret = ctrlChangePerms(curAddr, dataToProcess, info.perm);
+            ret = ctrlChangeMemoryPerms(curAddr, dataToProcess, info.perm);
             if (R_FAILED(ret))
                 return ret;
         }

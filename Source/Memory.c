@@ -9,7 +9,7 @@
  * -- Once again, citra doesn't have this limitation.
  * - Both luma and citra support invalidating the instruction cache.
  * - When mapping/unmapping svcControlProcessMemory expects a region of pages.
- * -- When unmapping, it's possible that the mirrored memory is made of multiple regions.
+ * -- When unmapping, it's possible that aliased memory is made of multiple regions.
  */
 
 #include <CTRL/Memory.h>
@@ -37,7 +37,7 @@ Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     return ret;
 }
 
-Result ctrlQueryRegion(u32 addr, MemInfo* memInfo) {
+Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo) {
     Result ret = ctrlQueryMemory(addr, memInfo, NULL);
     if (R_FAILED(ret))
         return ret;
@@ -57,7 +57,7 @@ Result ctrlQueryRegion(u32 addr, MemInfo* memInfo) {
     return 0;
 }
 
-Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
+Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms) {
     if (ctrlEnv() == Env_Citra)
         return 0;
 
@@ -73,26 +73,26 @@ Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms) {
     return ret;
 }
 
-Result ctrlMirror(u32 addr, u32 source, size_t size) {
+Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size) {
     Result ret = 0;
 
     if (ctrlEnv() == Env_Citra) {
         u32 out;
-        ret = svcControlMemory(&out, addr, source, size, MEMOP_MAP, MEMPERM_READWRITE);
+        ret = svcControlMemory(&out, alias, addr, size, MEMOP_MAP, MEMPERM_READWRITE);
     } else {
         Handle proc;
         ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
         if (R_FAILED(ret))
             return ret;
 
-        ret = svcControlProcessMemory(proc, addr, source, size, MEMOP_MAP, MEMPERM_READWRITE);
+        ret = svcControlProcessMemory(proc, alias, addr, size, MEMOP_MAP, MEMPERM_READWRITE);
         svcCloseHandle(proc);
     }
 
     return ret;
 }
 
-Result ctrlUnmirror(u32 addr, u32 source, size_t size) {
+Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size) {
     Result ret = 0;
     bool isCitra = (ctrlEnv() == Env_Citra);
     Handle proc = CUR_PROCESS_HANDLE;
@@ -106,7 +106,7 @@ Result ctrlUnmirror(u32 addr, u32 source, size_t size) {
     size_t processedData = 0;
     while (processedData < size) {
         MemInfo memInfo;
-        ret = ctrlQueryRegion(addr + processedData, &memInfo);
+        ret = ctrlQueryMemoryRegion(alias + processedData, &memInfo);
         if (R_FAILED(ret))
             break;
 
@@ -114,9 +114,9 @@ Result ctrlUnmirror(u32 addr, u32 source, size_t size) {
         const size_t dataToProcess = memInfo.size < dataLeft ? memInfo.size : dataLeft;
         if (isCitra) {
             u32 dummy;
-            ret = svcControlMemory(&dummy, addr + processedData, source + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
+            ret = svcControlMemory(&dummy, alias + processedData, addr + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
         } else {
-            ret = svcControlProcessMemory(proc, addr + processedData, source + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
+            ret = svcControlProcessMemory(proc, alias + processedData, addr + processedData, dataToProcess, MEMOP_UNMAP, MEMPERM_READWRITE);
         }
 
         if (R_FAILED(ret))
