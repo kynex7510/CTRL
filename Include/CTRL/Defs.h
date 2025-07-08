@@ -9,10 +9,8 @@
 
 #ifdef __cplusplus
 #define CTRL_INLINE inline
-#define CTRL_EXTERN extern "C"
 #else
 #define CTRL_INLINE static inline
-#define CTRL_EXTERN extern
 #endif // __cplusplus
 
 /**

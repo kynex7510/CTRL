@@ -12,12 +12,16 @@
 #define CTRL_ICACHE 0x01 ///< Instruction cache flag
 #define CTRL_DCACHE 0x02 ///< Data cache flag
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Flush processor cache.
  * @param[in] type Flush type (ICACHE, DCACHE or both).
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlFlushCache(size_t type);
+Result ctrlFlushCache(size_t type);
 
 /**
  * @brief Get informations about a page.
@@ -26,7 +30,7 @@ CTRL_EXTERN Result ctrlFlushCache(size_t type);
  * @param[out] pageInfo Page info (can be NULL).
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
+Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
 
 /**
  * @brief Get informations about a range of pages, with same permission and state values.
@@ -34,7 +38,7 @@ CTRL_EXTERN Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInf
  * @param[out] memInfo Range info.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
+Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
 
 /**
  * @brief Change permissions on a range of pages.
@@ -43,7 +47,7 @@ CTRL_EXTERN Result ctrlQueryRegion(u32 addr, MemInfo* memInfo);
  * @param[in] perms New permissions.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms);
+Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms);
 
 /**
  * @brief Mirror a range of pages to a different address.
@@ -52,7 +56,7 @@ CTRL_EXTERN Result ctrlChangePerms(u32 addr, size_t size, MemPerm perms);
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlMirror(u32 addr, u32 source, size_t size);
+Result ctrlMirror(u32 addr, u32 source, size_t size);
 
 /**
  * @brief Unmirror a range of pages.
@@ -61,6 +65,10 @@ CTRL_EXTERN Result ctrlMirror(u32 addr, u32 source, size_t size);
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlUnmirror(u32 addr, u32 source, size_t size);
+Result ctrlUnmirror(u32 addr, u32 source, size_t size);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* _CTRL_MEMORY_H */

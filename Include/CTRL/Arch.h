@@ -7,6 +7,10 @@
 
 #include <CTRL/Defs.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Check if an address references thumb code.
  * @param[in] addr Address.
@@ -27,5 +31,9 @@ CTRL_INLINE u32 ctrlSetThumb(u32 addr) { return addr | 1; }
  * @result Address with thumb mode bit clear.
  */
 CTRL_INLINE u32 ctrlClearThumb(u32 addr) { return addr & ~(1u); }
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* _CTRL_ARCH_H */

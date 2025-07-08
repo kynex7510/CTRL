@@ -14,12 +14,16 @@ typedef struct {
     size_t size;    ///< Patch size.
 } CTRLPatch;
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Apply a patch.
  * @param[in] patch Patch to apply.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlApplyPatch(const CTRLPatch* patch);
+Result ctrlApplyPatch(const CTRLPatch* patch);
 
 /**
  * @brief Apply a memory patch.
@@ -35,5 +39,9 @@ CTRL_INLINE Result ctrlPatchMemory(u32 addr, const u8* data, size_t size) {
     patch.size = size;
     return ctrlApplyPatch(&patch);
 }
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* _CTRL_PATCH_H */
