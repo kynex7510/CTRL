@@ -23,16 +23,24 @@ typedef struct {
     size_t dataSize;   ///< Application .data size
 } CTRLAppSectionInfo;
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Detect the environment in use.
  * @return Environment in use.
  */
-CTRL_EXTERN CTRLEnv ctrlEnv(void);
+CTRLEnv ctrlEnv(void);
 
 /**
  * @brief Detect informations about app sections.
  * @return Pointer to app sections info.
  */
-CTRL_EXTERN const CTRLAppSectionInfo* ctrlAppSectionInfo(void);
+const CTRLAppSectionInfo* ctrlAppSectionInfo(void);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif // _CTRL_APP_H

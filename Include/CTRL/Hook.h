@@ -16,18 +16,26 @@ typedef struct {
     u8 ogBytes[CTRL_HOOK_SIZE]; ///< Original bytes (internal use only).
 } CTRLHook;
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Place hook.
  * @param[in, out] hook Hook to place.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlPlaceHook(CTRLHook* hook);
+Result ctrlPlaceHook(CTRLHook* hook);
 
 /**
  * @brief Remove hook.
  * @param[in, out] hook Hook to remove.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlRemoveHook(CTRLHook* hook);
+Result ctrlRemoveHook(CTRLHook* hook);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* _CTRL_HOOK_H */

@@ -15,6 +15,10 @@
  */
 CTRL_INLINE size_t ctrlSizeToNumPages(size_t size) { return ctrlAlignSize(size, CTRL_PAGE_SIZE) >> 12; }
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Convert number of pages into size in bytes.
  * @return Size in bytes.
@@ -24,12 +28,12 @@ CTRL_INLINE size_t ctrlNumPagesToSize(size_t numPages) { return numPages << 12; 
 /**
  * @brief Flush entire processor data cache.
  */
-CTRL_EXTERN void ctrlFlushDataCache(void);
+void ctrlFlushDataCache(void);
 
 /**
  * @brief Invalidate entire processor instruction cache.
  */
-CTRL_EXTERN void ctrlInvalidateInstructionCache(void);
+void ctrlInvalidateInstructionCache(void);
 
 /**
  * @brief Get informations about a page.
@@ -38,7 +42,7 @@ CTRL_EXTERN void ctrlInvalidateInstructionCache(void);
  * @param[out] pageInfo Page info (can be NULL).
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
+Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
 
 /**
  * @brief Get informations about a range of pages, with same permission and state values.
@@ -46,7 +50,7 @@ CTRL_EXTERN Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInf
  * @param[out] memInfo Range info.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo);
+Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo);
 
 /**
  * @brief Change permissions on a range of pages.
@@ -55,7 +59,7 @@ CTRL_EXTERN Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo);
  * @param[in] perms New permissions.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms);
+Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms);
 
 /**
  * @brief Remap a range of pages as read-write.
@@ -64,7 +68,7 @@ CTRL_EXTERN Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms);
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size);
+Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size);
 
 /**
  * @brief Restore aliased memory.
@@ -73,6 +77,10 @@ CTRL_EXTERN Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size);
  * @param[in] size Size, must be page aligned.
  * @return Result code.
  */
-CTRL_EXTERN Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size);
+Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size);
+
+#ifdef __cplusplus
+}
+#endif // __cplusplus
 
 #endif /* _CTRL_MEMORY_H */
