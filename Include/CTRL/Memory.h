@@ -9,15 +9,15 @@
 
 #define CTRL_PAGE_SIZE 0x1000 ///< Page size
 
+#ifdef __cplusplus
+extern "C" {
+#endif // __cplusplus
+
 /**
  * @brief Convert size in bytes into number of pages.
  * @return Number of pages.
  */
-CTRL_INLINE size_t ctrlSizeToNumPages(size_t size) { return ctrlAlignSize(size, CTRL_PAGE_SIZE) >> 12; }
-
-#ifdef __cplusplus
-extern "C" {
-#endif // __cplusplus
+CTRL_INLINE size_t ctrlSizeToNumPages(size_t size) { return ctrlAlignUp(size, CTRL_PAGE_SIZE) >> 12; }
 
 /**
  * @brief Convert number of pages into size in bytes.

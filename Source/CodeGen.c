@@ -16,7 +16,7 @@ typedef struct {
 
 u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     // Align code block size to word.
-    size = ctrlAlignSize(size, sizeof(u32));
+    size = ctrlAlignUp(size, sizeof(u32));
 
     // Init region if needed.
     if (!*region) {

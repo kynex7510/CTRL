@@ -66,8 +66,8 @@ Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms) {
     if (R_FAILED(ret))
         return ret;
 
-    const u32 alignedAddr = ctrlAlignAddr(addr, CTRL_PAGE_SIZE);
-    const size_t alignedSize = ctrlAlignSize(size, CTRL_PAGE_SIZE);
+    const u32 alignedAddr = ctrlAlignDown(addr, CTRL_PAGE_SIZE);
+    const size_t alignedSize = ctrlAlignUp(size, CTRL_PAGE_SIZE);
     ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perms);
     svcCloseHandle(proc);
     return ret;

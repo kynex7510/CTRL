@@ -14,19 +14,19 @@
 #endif // __cplusplus
 
 /**
- * @brief Align an address (align down).
- * @param[in] addr Address.
+ * @brief Align down.
+ * @param[in] v Value.
  * @param[in] align Alignment.
- * @return Aligned address.
+ * @return Aligned down value.
  */
-CTRL_INLINE u32 ctrlAlignAddr(u32 addr, size_t align) { return addr & ~(align - 1); }
+CTRL_INLINE size_t ctrlAlignDown(size_t v, size_t align) { return v & ~(align - 1); }
 
 /**
- * @brief Align size (align up).
- * @param[in] size Size.
+ * @brief Align up.
+ * @param[in] v Value.
  * @param[in] align Alignment.
- * @return Aligned size.
+ * @return Aligned up value.
  */
-CTRL_INLINE size_t ctrlAlignSize(size_t size, size_t align) { return (size + (align - 1)) & ~(align - 1); }
+CTRL_INLINE size_t ctrlAlignUp(size_t v, size_t align) { return (v + (align - 1)) & ~(align - 1); }
 
 #endif /* _CTRL_DEFS_H */ 
