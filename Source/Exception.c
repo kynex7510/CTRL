@@ -30,7 +30,7 @@ static void disableExHandlingImpl(u32* tls) {
     tls[TLS_EX_CTX_SLOT] = 0;
 }
 
-bool ctrlExceptionHandlingIsSupported(void) { return ctrlEnv() == Env_Luma; }
+bool ctrlExceptionHandlingIsSupported(void) { return !(OS_KernelConfig->env_info & 1); }
 
 bool ctrlEnableExceptionHandling(void) {
     if (ctrlExceptionHandlingIsSupported()) {
