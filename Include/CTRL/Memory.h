@@ -7,7 +7,7 @@
 
 #include <CTRL/Defs.h>
 
-#define CTRL_PAGE_SIZE 0x1000 ///< Page size
+#define CTRL_PAGE_SIZE 0x1000 ///< Page size.
 
 #ifdef __cplusplus
 extern "C" {

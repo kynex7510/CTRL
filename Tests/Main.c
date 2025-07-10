@@ -52,27 +52,30 @@ static bool exHandler2(ERRF_ExceptionData* info) {
     return false;
 }
 
+__attribute__((noinline)) extern void crashForExHandler();
+
 static bool exTest(void) {
     printf("=== EXCEPTION HANDLER TEST ===\n");
 
     if (ctrlExceptionHandlingIsSupported()) {
+        ctrlEnableExceptionHandling();
+
         if (!ctrlSetExceptionHandler(exHandler2, CTRL_MAX_EX_HANDLERS - 1)) {
-            printf("FAILED: could not set exception handler\n");
+            printf("FAILED: could not set exception handler \"exHandler2\"\n");
             return false;
         }
 
         if (!ctrlSetExceptionHandler(exHandler1, 1)) {
-            printf("FAILED: could not set exception handler\n");
+            printf("FAILED: could not set exception handler \"exHandler1\"\n");
             return false;
         }
 
         if (!ctrlSetExceptionHandler(exHandler0, 0)) {
-            printf("FAILED: could not set exception handler\n");
+            printf("FAILED: could not set exception handler \"exHandler0\"\n");
             return false;
         }
         
-        asm("mov r0, #0");
-        asm("ldr r0, [r0]");
+        crashForExHandler();
 
         ctrlDisableExceptionHandling();
         printf("SUCCESS\n");
