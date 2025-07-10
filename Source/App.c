@@ -36,13 +36,30 @@ static inline bool detectEnv(CTRLEnv* env) {
         return true;
     }
 
+    // Check privileged syscall access.
+    MemInfo memInfo;
+    PageInfo pageInfo;
+    svcQueryProcessMemory(&memInfo, &pageInfo, 0, 0xFFFFFFFF);
+    svcControlProcessMemory(0, 0, 0, 0, 0, 0);
+    svcUnmapProcessMemory(0, 0, 0);
+
+    // Initialize GSP for data cache flushing.
+    Result ret = gspInit();
+    if (R_SUCCEEDED(ret)) {
+        *env = Env_Generic;
+        return true;
+    }
+
     return false;
 }
 
 static inline Result getAppSectionInfo(CTRLAppSectionInfo* out) {
     s64 tmp;
     Result ret;
+    CTRLEnv env;
 
+    // Use extensions if available.
+    if (detectEnv(&env) && env != Env_Generic) {
 #define READ_INFO(type, outMember)                               \
     ret = svcGetProcessInfo(&tmp, CUR_PROCESS_HANDLE, ((type))); \
     if (R_FAILED(ret))                                           \
@@ -50,14 +67,24 @@ static inline Result getAppSectionInfo(CTRLAppSectionInfo* out) {
                                                                  \
     outMember = tmp;
 
-    READ_INFO(TEXT_ADDR_TYPE, out->textAddr);
-    READ_INFO(TEXT_SIZE_TYPE, out->textSize);
-    READ_INFO(RODATA_ADDR_TYPE, out->rodataAddr);
-    READ_INFO(RODATA_SIZE_TYPE, out->rodataSize);
-    READ_INFO(DATA_ADDR_TYPE, out->dataAddr);
-    READ_INFO(DATA_SIZE_TYPE, out->dataSize);
+        READ_INFO(TEXT_ADDR_TYPE, out->textAddr);
+        READ_INFO(TEXT_SIZE_TYPE, out->textSize);
+        READ_INFO(RODATA_ADDR_TYPE, out->rodataAddr);
+        READ_INFO(RODATA_SIZE_TYPE, out->rodataSize);
+        READ_INFO(DATA_ADDR_TYPE, out->dataAddr);
+        READ_INFO(DATA_SIZE_TYPE, out->dataSize);
 
 #undef READ_INFO
+        return 0;
+    }
+
+    // TODO: can do heuristics with memory query.
+    out->textAddr = 0x1000000;
+    out->textSize = 0x1000000;
+    out->rodataAddr = 0;
+    out->rodataSize = 0;
+    out->dataAddr = 0;
+    out->dataSize = 0;
     return 0;
 }
 

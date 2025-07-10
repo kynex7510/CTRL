@@ -17,8 +17,32 @@
 
 #include <string.h> // memcpy
 
-void ctrlFlushDataCache(void) { asm("svc 0x92"); }
-void ctrlInvalidateInstructionCache(void) { asm("svc 0x94"); }
+void ctrlFlushDataCache(void) {
+    const CTRLEnv env = ctrlEnv();
+
+    // Check for specialized syscall.
+    if (env == Env_Luma || env == Env_Citra) {
+        asm("svc 0x92");
+        return;
+    }
+
+    // Use GSP to flush the entire data cache.
+    Result ret = GSPGPU_FlushDataCache((void*)0x30000000, 0x10000000);
+    if (R_FAILED(ret))
+        svcBreak(USERBREAK_PANIC);
+}
+void ctrlInvalidateInstructionCache(void) {
+    const CTRLEnv env = ctrlEnv();
+
+    // Check for specialized syscall.
+    if (env == Env_Luma || env == Env_Citra) {
+        asm("svc 0x94");
+        return;
+    }
+
+    // Use svcUnmapProcessMemory, which unconditionally invalidates the entire instruction cache.
+    svcUnmapProcessMemory(0, 0, 0);
+}
 
 Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;

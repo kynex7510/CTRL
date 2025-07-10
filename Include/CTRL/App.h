@@ -9,8 +9,9 @@
 
 /// @brief Environment values.
 typedef enum {
-    Env_Luma,   ///< Luma 8.0.0+
-    Env_Citra,  ///< Citra (and derived forks)
+    Env_Luma,    ///< Luma 8.0.0+.
+    Env_Citra,   ///< Citra (and derived forks).
+    Env_Generic, ///< Generic environment.
 } CTRLEnv;
 
 /// @brief Application sections info.

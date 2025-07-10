@@ -9,7 +9,17 @@
 // Defined in ExHandler.s.
 extern void ctrl_handleException(void);
 
-bool ctrlExceptionHandlingIsSupported(void) { return ctrlEnv() == Env_Luma; }
+bool ctrlExceptionHandlingIsSupported(void) {
+    // Luma has debugging capabilities always enabled.
+    if (ctrlEnv() == Env_Luma)
+        return true;
+
+    // Check for debug unit.
+    if (OS_KernelConfig->unit_info != 0)
+        return true;
+
+    return false;
+}
 
 void ctrlEnableExceptionHandling(void) {
     if (ctrlExceptionHandlingIsSupported()) {
