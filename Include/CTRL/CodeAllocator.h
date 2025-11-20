@@ -12,6 +12,15 @@ extern "C" {
 #endif // __cplusplus
 
 /**
+ * @brief Get the next address used for mapping code pages.
+ * @note This value might be different across different calls.
+ * @param[in] numPages Number of pages to allocate.
+ * @param[out] outAddr Possible allocation address.
+ * @return Result code. 
+ */
+Result ctrlNextCodeAllocAddress(size_t numPages, u32* outAddr);
+
+/**
  * @brief Allocate pages to be used for code.
  * @param[in] numPages Number of pages to allocate.
  * @param[out] outAddr Allocation address.

@@ -53,6 +53,18 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     return (u8*)((u32)r + offsetToLastBlock + sizeof(BlockHeader));
 }
 
+Result ctrlCodeRegionBaseAddress(CTRLCodeRegion region, u32* outAddr) {
+    RegionHeader* r = (RegionHeader*)region;
+
+    if (r->allocAddr) {
+        *outAddr = r->allocAddr;
+        return 0;
+    }
+
+    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
+    return ctrlNextCodeAllocAddress(numPages, outAddr);
+}
+
 Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
     RegionHeader* r = (RegionHeader*)*region;
     const size_t numPages = ctrlSizeToNumPages(r->regionSize);

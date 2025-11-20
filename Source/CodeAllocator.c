@@ -90,7 +90,7 @@ static u32 detectCodeRegionStart(void) {
     return secInfo->textAddr + secInfo->textSize + secInfo->rodataSize + secInfo->dataSize;
 }
 
-Result ctrlAllocCodePages(size_t numPages, u32* outAddr) {
+Result ctrlNextCodeAllocAddress(size_t numPages, u32* outAddr) {
     const u32 codeAllocBegin = __ctru_heap + __ctru_heap_size;
     const u32 codeAllocEnd = codeAllocBegin + ctrlNumPagesToSize(__ctrl_code_allocator_pages);
     const size_t size = ctrlNumPagesToSize(numPages);
@@ -108,12 +108,6 @@ Result ctrlAllocCodePages(size_t numPages, u32* outAddr) {
             return ret;
 
         if (info.state == MEMSTATE_FREE && info.size >= size) {
-            u32 dummy;
-            Result ret = svcControlMemory(&dummy, base, 0, size, MEMOP_ALLOC, MEMPERM_READWRITE);
-
-            if (R_FAILED(ret))
-                return ret;
-
             *outAddr = base;
             return 0;
         }
@@ -122,6 +116,20 @@ Result ctrlAllocCodePages(size_t numPages, u32* outAddr) {
     }
 
     return ERR_NO_MEM;
+}
+
+Result ctrlAllocCodePages(size_t numPages, u32* outAddr) {
+    u32 base;
+    Result ret = ctrlNextCodeAllocAddress(numPages, &base);
+    if (R_FAILED(ret))
+        return ret;
+
+    u32 dummy;
+    ret = svcControlMemory(&dummy, base, 0, ctrlNumPagesToSize(numPages), MEMOP_ALLOC, MEMPERM_READWRITE);
+    if (R_SUCCEEDED(ret))
+        *outAddr = base;
+
+    return ret;
 }
 
 Result ctrlFreeCodePages(u32 allocAddr, size_t numPages) {
