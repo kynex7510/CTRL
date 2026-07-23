@@ -60,11 +60,12 @@ Result ctrlQueryMemoryRegion(Handle proc, u32 addr, MemInfo* memInfo) {
 
     while (true) {
         MemInfo tmp;
-        ret = ctrlQueryMemory(proc, memInfo->base_addr + memInfo->size, &tmp, NULL);
+        const u32 curAddr = memInfo->base_addr + memInfo->size;
+        ret = ctrlQueryMemory(proc, curAddr, &tmp, NULL);
         if (R_FAILED(ret))
             return ret;
 
-        if ((tmp.perm != memInfo->perm) || (tmp.state != memInfo->state))
+        if ((tmp.base_addr != curAddr) || (tmp.perm != memInfo->perm) || (tmp.state != memInfo->state))
             break;
 
         memInfo->size += tmp.size;
