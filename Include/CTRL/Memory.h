@@ -69,6 +69,28 @@ Result ctrlQueryMemoryRegion(Handle proc, u32 addr, MemInfo* memInfo);
 Result ctrlChangeMemoryPerms(Handle proc, u32 addr, size_t size, MemPerm perms);
 
 /**
+ * @brief Read process memory.
+ * @param[in] proc Target process.
+ * @param[in] addr Address.
+ * @param[in] size Size.
+ * @param[out] buffer Output buffer.
+ * @return Result code.
+ * @note At least 1 page must be dedicated to the code allocator when targeting a different process.
+ */
+Result ctrlReadMemory(Handle proc, u32 addr, size_t size, void* buffer);
+
+/**
+ * @brief Write process memory.
+ * @param[in] proc Target process.
+ * @param[in] addr Address.
+ * @param[in] size Size.
+ * @param[in] buffer Input buffer.
+ * @return Result code.
+ * @note At least 1 page must be dedicated to the code allocator when targeting a different process.
+ */
+Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer);
+
+/**
  * @brief Remap a range of pages as read-write.
  * @param[in] addr Source address, must be page aligned.
  * @param[in] alias Alias address, must be page aligned.

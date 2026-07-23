@@ -1,3 +1,9 @@
+/**
+ * Boost Software License - Version 1.0 - August 17th, 2003
+ * Copyright (c) 2024-2026 Kynex7510
+ * See the LICENSE file for more info.
+ */
+
 #include <CTRL/Memory.h>
 #include <CTRL/Hook.h>
 #include <CTRL/Exception.h>
@@ -196,7 +202,7 @@ static bool hookTest(void) {
     hook.callback = (u32)myRand;
 
     // Hook code.
-    Result ret = ctrlPlaceHook(&hook);
+    Result ret = ctrlPlaceHook(CUR_PROCESS_HANDLE, &hook);
     if (R_FAILED(ret)) {
         printf("HOOK FAILED: 0x%08lx\n", ret);
         return false;
@@ -213,7 +219,7 @@ static bool hookTest(void) {
     }
 
     // Unhook code.
-    ret = ctrlRemoveHook(&hook);
+    ret = ctrlRemoveHook(CUR_PROCESS_HANDLE, &hook);
     if (R_FAILED(ret)) {
         printf("UNHOOK FAILED: 0x%08lx\n", ret);
         return false;

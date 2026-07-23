@@ -15,6 +15,7 @@ set(CTRL_SOURCES
     Source/Hook.c
     Source/Memory.c
     Source/Patch.c
+    Source/Syscalls.s
 )
 
 add_library(CTRL STATIC ${CTRL_SOURCES})

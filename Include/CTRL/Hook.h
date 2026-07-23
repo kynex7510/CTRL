@@ -25,18 +25,20 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * @brief Place hook.
+ * @brief Place hook on the specified process.
+ * @param[in] proc Target process.
  * @param[in, out] hook Hook to place.
  * @return Result code.
  */
-Result ctrlPlaceHook(CTRLHook* hook);
+Result ctrlPlaceHook(Handle proc, CTRLHook* hook);
 
 /**
- * @brief Remove hook.
+ * @brief Remove hook from the specified process.
+ * @param[in] proc Target process.
  * @param[in, out] hook Hook to remove.
  * @return Result code.
  */
-Result ctrlRemoveHook(CTRLHook* hook);
+Result ctrlRemoveHook(Handle proc, CTRLHook* hook);
 
 #ifdef __cplusplus
 }

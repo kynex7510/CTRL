@@ -23,25 +23,29 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * @brief Apply a patch.
+ * @brief Apply a patch to the specified process.
+ * @param[in] proc Target process.
  * @param[in] patch Patch to apply.
  * @return Result code.
+ * @note A different process should be targeted only when suspended.
  */
-Result ctrlApplyPatch(const CTRLPatch* patch);
+Result ctrlApplyPatch(Handle proc, const CTRLPatch* patch);
 
 /**
- * @brief Apply a memory patch.
+ * @brief Apply a memory patch to the specified process.
+ * @param[in] proc Target process.
  * @param[in] addr Address to patch.
  * @param[in] data Patch data.
  * @param[in] size Patch size.
  * @return Result code.
+ * @note A different process should be targeted only when suspended.
  */
-CTRL_INLINE Result ctrlPatchMemory(u32 addr, const u8* data, size_t size) {
+CTRL_INLINE Result ctrlPatchMemory(Handle proc, u32 addr, const u8* data, size_t size) {
     CTRLPatch patch;
     patch.addr = addr;
     patch.data = data;
     patch.size = size;
-    return ctrlApplyPatch(&patch);
+    return ctrlApplyPatch(proc, &patch);
 }
 
 #ifdef __cplusplus
