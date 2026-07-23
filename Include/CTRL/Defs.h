@@ -2,8 +2,8 @@
  * @file Defs.h
  * @brief Common definitions.
  */
-#ifndef _CTRL_DEFS_H
-#define _CTRL_DEFS_H
+#ifndef GUARD_CTRL_DEFS_H
+#define GUARD_CTRL_DEFS_H
 
 #include <3ds.h>
 
@@ -29,4 +29,4 @@ CTRL_INLINE size_t ctrlAlignDown(size_t v, size_t align) { return v & ~(align - 
  */
 CTRL_INLINE size_t ctrlAlignUp(size_t v, size_t align) { return (v + (align - 1)) & ~(align - 1); }
 
-#endif /* _CTRL_DEFS_H */ 
+#endif /* GUARD_CTRL_DEFS_H */ 

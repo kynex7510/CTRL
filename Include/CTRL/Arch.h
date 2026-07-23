@@ -2,8 +2,8 @@
  * @file Arch.h
  * @brief Arch utilities.
  */
-#ifndef _CTRL_ARCH_H
-#define _CTRL_ARCH_H
+#ifndef GUARD_CTRL_ARCH_H
+#define GUARD_CTRL_ARCH_H
 
 #include <CTRL/Defs.h>
 
@@ -36,4 +36,4 @@ CTRL_INLINE u32 ctrlClearThumb(u32 addr) { return addr & ~(1u); }
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_ARCH_H */
+#endif /* GUARD_CTRL_ARCH_H */

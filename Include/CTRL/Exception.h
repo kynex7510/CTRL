@@ -2,8 +2,8 @@
  * @file Exception.h
  * @brief Exception handling utilities.
  */
-#ifndef _CTRL_EXCEPTION_H
-#define _CTRL_EXCEPTION_H
+#ifndef GUARD_CTRL_EXCEPTION_H
+#define GUARD_CTRL_EXCEPTION_H
 
 #include <CTRL/Defs.h>
 
@@ -77,4 +77,4 @@ bool ctrlExceptionHandlerIsSet(size_t index);
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_EXCEPTION_H */
+#endif /* GUARD_CTRL_EXCEPTION_H */

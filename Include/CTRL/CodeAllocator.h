@@ -2,8 +2,8 @@
  * @file CodeAllocator.h
  * @brief Code allocator utilities.
  */
-#ifndef _CTRL_CODE_ALLOCATOR_H
-#define _CTRL_CODE_ALLOCATOR_H
+#ifndef GUARD_CTRL_CODE_ALLOCATOR_H
+#define GUARD_CTRL_CODE_ALLOCATOR_H
 
 #include <CTRL/Defs.h>
 
@@ -58,4 +58,4 @@ Result ctrlReleaseCodePages(u32 allocAddr, u32 commitAddr, size_t numPages);
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_CODE_ALLOCATOR_H */
+#endif /* GUARD_CTRL_CODE_ALLOCATOR_H */

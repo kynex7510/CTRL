@@ -2,8 +2,8 @@
  * @file CodeGen.h
  * @brief Code generation utilities.
  */
-#ifndef _CTRL_CODEGEN_H
-#define _CTRL_CODEGEN_H
+#ifndef GUARD_CTRL_CODEGEN_H
+#define GUARD_CTRL_CODEGEN_H
 
 #include <CTRL/Defs.h>
 
@@ -82,4 +82,4 @@ u32 ctrlGetCodeBlock(CTRLCodeRegion region, size_t index);
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_CODEGEN_H */
+#endif /* GUARD_CTRL_CODEGEN_H */

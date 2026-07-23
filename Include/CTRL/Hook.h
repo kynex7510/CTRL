@@ -2,8 +2,8 @@
  * @file Hook.h
  * @brief Hooking utilities.
  */
-#ifndef _CTRL_HOOK_H
-#define _CTRL_HOOK_H
+#ifndef GUARD_CTRL_HOOK_H
+#define GUARD_CTRL_HOOK_H
 
 #include <CTRL/Defs.h>
 
@@ -38,4 +38,4 @@ Result ctrlRemoveHook(CTRLHook* hook);
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_HOOK_H */
+#endif /* GUARD_CTRL_HOOK_H */

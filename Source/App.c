@@ -1,3 +1,9 @@
+/**
+ * Boost Software License - Version 1.0 - August 17th, 2003
+ * Copyright (c) 2024-2025 Kynex7510
+ * See the LICENSE file for more info.
+ */
+
 #include <CTRL/App.h>
 #include <CTRL/Memory.h>
 

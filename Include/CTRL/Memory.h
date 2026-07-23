@@ -2,8 +2,8 @@
  * @file Memory.h
  * @brief Memory utilities.
  */
-#ifndef _CTRL_MEMORY_H
-#define _CTRL_MEMORY_H
+#ifndef GUARD_CTRL_MEMORY_H
+#define GUARD_CTRL_MEMORY_H
 
 #include <CTRL/Defs.h>
 
@@ -83,4 +83,4 @@ Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size);
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_MEMORY_H */
+#endif /* GUARD_CTRL_MEMORY_H */

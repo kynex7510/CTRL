@@ -2,8 +2,8 @@
  * @file App.h
  * @brief Application utilities.
  */
-#ifndef _CTRL_APP_H
-#define _CTRL_APP_H
+#ifndef GUARD_CTRL_APP_H
+#define GUARD_CTRL_APP_H
 
 #include <CTRL/Defs.h>
 
@@ -43,4 +43,4 @@ const CTRLAppSectionInfo* ctrlAppSectionInfo(void);
 }
 #endif // __cplusplus
 
-#endif // _CTRL_APP_H
+#endif // GUARD_CTRL_APP_H
