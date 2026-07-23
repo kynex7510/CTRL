@@ -26,11 +26,11 @@
 void ctrlFlushDataCache(void) { asm("svc 0x92"); }
 void ctrlInvalidateInstructionCache(void) { asm("svc 0x94"); }
 
-Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
+Result ctrlQueryMemory(Handle proc, u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     MemInfo silly;
     PageInfo dummy;
 
-    const Result ret = svcQueryProcessMemory(&silly, &dummy, CUR_PROCESS_HANDLE, addr);
+    const Result ret = svcQueryProcessMemory(&silly, &dummy, proc, addr);
     
     if (R_SUCCEEDED(ret)) {
         if (memInfo)
@@ -43,14 +43,14 @@ Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo) {
     return ret;
 }
 
-Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo) {
-    Result ret = ctrlQueryMemory(addr, memInfo, NULL);
+Result ctrlQueryMemoryRegion(Handle proc, u32 addr, MemInfo* memInfo) {
+    Result ret = ctrlQueryMemory(proc, addr, memInfo, NULL);
     if (R_FAILED(ret))
         return ret;
 
     while (true) {
         MemInfo tmp;
-        ret = ctrlQueryMemory(memInfo->base_addr + memInfo->size, &tmp, NULL);
+        ret = ctrlQueryMemory(proc, memInfo->base_addr + memInfo->size, &tmp, NULL);
         if (R_FAILED(ret))
             return ret;
 
@@ -63,19 +63,26 @@ Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo) {
     return 0;
 }
 
-Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms) {
+Result ctrlChangeMemoryPerms(Handle proc, u32 addr, size_t size, MemPerm perms) {
     if (ctrlEnv() == Env_Citra)
-        return 0;
+        return proc == CUR_PROCESS_HANDLE ? 0 : MAKERESULT(RL_PERMANENT, RS_NOTSUPPORTED, RM_OS, RD_NOT_IMPLEMENTED);
 
-    Handle proc;
-    Result ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
-    if (R_FAILED(ret))
-        return ret;
+    bool needsClose = false;
+    if (proc == CUR_PROCESS_HANDLE) {
+        const Result ret = svcDuplicateHandle(&proc, CUR_PROCESS_HANDLE);
+        if (R_FAILED(ret))
+            return ret;
+
+        needsClose = true;
+    }
 
     const u32 alignedAddr = ctrlAlignDown(addr, CTRL_PAGE_SIZE);
     const size_t alignedSize = ctrlAlignUp(size, CTRL_PAGE_SIZE);
-    ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perms);
-    svcCloseHandle(proc);
+    const Result ret = svcControlProcessMemory(proc, alignedAddr, 0, alignedSize, MEMOP_PROT, perms);
+
+    if (needsClose)
+        svcCloseHandle(proc);
+    
     return ret;
 }
 
@@ -112,7 +119,7 @@ Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size) {
     size_t processedData = 0;
     while (processedData < size) {
         MemInfo memInfo;
-        ret = ctrlQueryMemoryRegion(alias + processedData, &memInfo);
+        ret = ctrlQueryMemoryRegion(proc, alias + processedData, &memInfo);
         if (R_FAILED(ret))
             break;
 

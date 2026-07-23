@@ -109,7 +109,7 @@ Result ctrlNextCodeAllocAddress(size_t numPages, u32* outAddr) {
     u32 base = codeAllocBegin;
 
     while (base < codeAllocEnd) {
-        Result ret = ctrlQueryMemoryRegion(base, &info);
+        Result ret = ctrlQueryMemoryRegion(CUR_PROCESS_HANDLE, base, &info);
         if (R_FAILED(ret))
             return ret;
 
@@ -154,7 +154,7 @@ Result ctrlCommitCodePages(u32 allocAddr, size_t numPages, u32* outCommitAddr) {
         return ret;
 
     // Make it executable.
-    ret = ctrlChangeMemoryPerms(commitAddr, size, MEMPERM_READEXECUTE);
+    ret = ctrlChangeMemoryPerms(CUR_PROCESS_HANDLE, commitAddr, size, MEMPERM_READEXECUTE);
     if (R_FAILED(ret)) {
         ctrlUnmapAliasMemory(allocAddr, commitAddr, size);
         return ret;

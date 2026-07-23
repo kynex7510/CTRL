@@ -40,30 +40,33 @@ void ctrlFlushDataCache(void);
 void ctrlInvalidateInstructionCache(void);
 
 /**
- * @brief Get informations about a page.
+ * @brief Get informations about a page for the specified process.
+ * @param[in] proc Target process.
  * @param[in] addr Address within a page.
  * @param[out] memInfo Memory info (can be NULL).
  * @param[out] pageInfo Page info (can be NULL).
  * @return Result code.
  */
-Result ctrlQueryMemory(u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
+Result ctrlQueryMemory(Handle proc, u32 addr, MemInfo* memInfo, PageInfo* pageInfo);
 
 /**
- * @brief Get informations about a range of pages, with same permission and state values.
+ * @brief Get informations about a range of pages for the specified process, with
+ * the same permission and state values.
  * @param[in] addr Address within the range.
  * @param[out] memInfo Range info.
  * @return Result code.
  */
-Result ctrlQueryMemoryRegion(u32 addr, MemInfo* memInfo);
+Result ctrlQueryMemoryRegion(Handle proc, u32 addr, MemInfo* memInfo);
 
 /**
- * @brief Change permissions on a range of pages.
+ * @brief Change permissions on a range of pages for the specified process.
+ * @param[in] proc Target process.
  * @param[in] addr Address.
  * @param[in] size Size.
  * @param[in] perms New permissions.
  * @return Result code.
  */
-Result ctrlChangeMemoryPerms(u32 addr, size_t size, MemPerm perms);
+Result ctrlChangeMemoryPerms(Handle proc, u32 addr, size_t size, MemPerm perms);
 
 /**
  * @brief Remap a range of pages as read-write.
