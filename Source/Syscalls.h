@@ -17,6 +17,5 @@ void svcFlushEntireDataCache(void);
 void svcInvalidateEntireInstructionCache(void);
 Result svcMapProcessMemoryEx(Handle dstProc, u32 vaDst, Handle srcProc, u32 vaSrc, u32 size, MapExFlags flags);
 Result svcUnmapProcessMemoryEx(Handle proc, u32 addr, u32 size);
-Result svcControlMemoryUnsafe(u32 *out, u32 addr0, u32 size, MemOp op, MemPerm perm);
 
 #endif /* GUARD_CTRL_INTERNAL_SYSCALLS_H */

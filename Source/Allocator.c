@@ -12,26 +12,74 @@
 
 #define ERR_NO_MEM MAKERESULT(RL_STATUS, RS_OUTOFRESOURCE, RM_OS, 0x0A)
 
-Result ctrlReserveMappablePages(size_t numPages, size_t* outPageIndex) {
-    *outPageIndex = ctrlAddrToPageIndex((u32)mappableAlloc(ctrlNumPagesToSize(numPages)));
-    return *outPageIndex ? 0 : ERR_NO_MEM;
+static size_t g_HeapPageBase = 0;
+static size_t g_HeapMaxPage = 0;
+
+static Result setupHeapAllocator(void) {
+    extern u32 __ctru_heap;
+    extern u32 __ctru_heap_size;
+
+    // Find first free page after application heap.
+    u32 curAddr = __ctru_heap + __ctru_heap_size;
+    u32 heapBase = 0;
+
+    while (curAddr < OS_HEAP_AREA_END) {
+        MemInfo memInfo;
+        PageInfo pageInfo;
+        const Result ret = svcQueryMemory(&memInfo, &pageInfo, curAddr);
+        if (R_FAILED(ret))
+            return ret;
+
+        if (memInfo.base_addr >= OS_HEAP_AREA_BEGIN && memInfo.state == MEMSTATE_FREE) {
+            heapBase = memInfo.base_addr;
+            break;
+        }
+
+        curAddr = memInfo.base_addr + memInfo.size;
+    }
+
+    if (!heapBase)
+        return ERR_NO_MEM;
+
+    // Find consecutive pages.
+    curAddr = heapBase;
+    size_t heapSize = 0;
+    const size_t maxHeapSize = OS_HEAP_AREA_END - heapBase;
+
+    while (heapSize < maxHeapSize) {
+        MemInfo memInfo;
+        PageInfo pageInfo;
+        const Result ret = svcQueryMemory(&memInfo, &pageInfo, curAddr);
+        if (R_FAILED(ret))
+            return ret;
+
+        if (memInfo.state != MEMSTATE_FREE)
+            break;
+
+        heapSize += memInfo.size;
+        if (heapSize > maxHeapSize)
+            heapSize = maxHeapSize;
+
+        curAddr = heapBase + heapSize;
+    }
+
+    if (!heapSize)
+        return ERR_NO_MEM;
+
+    g_HeapPageBase = ctrlAddrToPageIndex(heapBase);
+    g_HeapMaxPage = ctrlAddrToPageIndex(heapBase + heapSize);
+    return 0;
 }
 
-Result ctrlMappableAlloc(size_t pageIndex, size_t numPages) {
-    u32 dummy;
-    return svcControlMemory(&dummy, ctrlPageIndexToAddr(pageIndex), 0, ctrlNumPagesToSize(numPages), MEMOP_ALLOC, MEMPERM_READWRITE);
+static __attribute((constructor)) void initHeapAllocator(void) {
+    if (R_FAILED(setupHeapAllocator()))
+        svcBreak(USERBREAK_PANIC);
 }
 
-Result ctrlMappableFree(size_t pageIndex, size_t numPages) {
-    // svcControlMemory doesn't accept MAP area addresses when free'ing, I suppose this is a kernel bug.
-    u32 dummy;
-    return svcControlMemoryUnsafe(&dummy, ctrlPageIndexToAddr(pageIndex), ctrlNumPagesToSize(numPages), MEMOP_FREE, 0);
-}
-
-static Result findFreeCodeRange(size_t numPages, size_t curIndex, size_t* outPageIndex) {
+static Result findFreeRange(size_t numPages, size_t curIndex, size_t maxIndex, size_t* outPageIndex) {
     u32 curAddr = ctrlPageIndexToAddr(curIndex);
 
-    while (true) {
+    while (curAddr < ctrlPageIndexToAddr(maxIndex)) {
         MemInfo memInfo;
         Result ret = ctrlQueryMemoryRegion(CUR_PROCESS_HANDLE, curAddr, &memInfo);
         if (R_FAILED(ret))
@@ -44,16 +92,56 @@ static Result findFreeCodeRange(size_t numPages, size_t curIndex, size_t* outPag
 
         curAddr = memInfo.base_addr + memInfo.size;
     }
+
+    return ERR_NO_MEM;
+}
+
+Result ctrlReserveHeapPages(size_t numPages, size_t* outPageIndex) {
+    static size_t offset = 0;
+
+    Result ret = findFreeRange(numPages, g_HeapPageBase + offset, g_HeapMaxPage, outPageIndex);
+
+    if (R_FAILED(ret))
+        ret = findFreeRange(numPages, g_HeapPageBase, g_HeapPageBase + offset, outPageIndex);
+
+    if (R_SUCCEEDED(ret))
+        offset = (*outPageIndex + numPages) - g_HeapPageBase;
+
+    return ret;
+}
+
+Result ctrlHeapAlloc(size_t pageIndex, size_t numPages) {
+    u32 dummy;
+    return svcControlMemory(&dummy, ctrlPageIndexToAddr(pageIndex), 0, ctrlNumPagesToSize(numPages), MEMOP_ALLOC, MEMPERM_READWRITE);
+}
+
+Result ctrlHeapFree(size_t pageIndex, size_t numPages) {
+    u32 dummy;
+    return svcControlMemory(&dummy, ctrlPageIndexToAddr(pageIndex), 0, ctrlNumPagesToSize(numPages), MEMOP_FREE, 0);
+}
+
+static size_t maxPageForCodeBase(size_t pageBase) {
+    const u32 addr = ctrlPageIndexToAddr(pageBase);
+
+    if (addr >= 0x100000 && addr <= 0x4000000)
+        return ctrlAddrToPageIndex(0x4000000);
+
+    if (addr >= 0x14000000 && addr <= 0x1C000000)
+        return ctrlAddrToPageIndex(0x1C000000);
+
+    // Shouldn't happen.
+    svcBreak(USERBREAK_PANIC);
+    return 0;
 }
 
 Result ctrlReserveExecutablePages(size_t numPages, size_t* outPageIndex) {
     static size_t offset = 0;
     const size_t pageBase = ctrlAddrToPageIndex(ctrlAppSectionInfo()->textAddr);
 
-    Result ret = findFreeCodeRange(numPages, pageBase + offset, outPageIndex);
+    Result ret = findFreeRange(numPages, pageBase + offset, maxPageForCodeBase(pageBase), outPageIndex);
 
     if (R_FAILED(ret))
-        ret = findFreeCodeRange(numPages, pageBase, outPageIndex);
+        ret = findFreeRange(numPages, pageBase, pageBase + offset, outPageIndex);
 
     if (R_SUCCEEDED(ret))
         offset = (*outPageIndex + numPages) - pageBase;

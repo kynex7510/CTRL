@@ -16,28 +16,28 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * @brief Reserve mappable pages.
+ * @brief Reserve heap pages.
  * @param[in] numPages Number of pages.
  * @param[out] outPageIndex Allocation page index.
  * @return Result code.
  */
-Result ctrlReserveMappablePages(size_t numPages, size_t* outPageIndex);
+Result ctrlReserveHeapPages(size_t numPages, size_t* outPageIndex);
 
 /**
- * @brief Allocate pages in "mappable" memory as RW.
+ * @brief Allocate pages in heap memory as RW.
  * @param[in] pageIndex Page index.
  * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlMappableAlloc(size_t pageIndex, size_t numPages);
+Result ctrlHeapAlloc(size_t pageIndex, size_t numPages);
 
 /**
- * @brief Free allocated pages.
+ * @brief Free heap pages.
  * @param[in] pageIndex Page index.
  * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlMappableFree(size_t pageIndex, size_t numPages);
+Result ctrlHeapFree(size_t pageIndex, size_t numPages);
 
 /**
  * @brief Reserve executable pages.

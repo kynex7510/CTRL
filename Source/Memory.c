@@ -111,14 +111,14 @@ Result ctrlUnshareMemory(Handle dstProc, u32 dstAddr, size_t size) {
     // Workaround a bug which doesn't restore the true memstate field.
     // This workaround is currently only available for the current process.
     if (ctrlIsThisProcess(dstProc))
-        ctrlMappableFree(ctrlAddrToPageIndex(dstAddr), ctrlSizeToNumPages(size));
+        ctrlHeapFree(ctrlAddrToPageIndex(dstAddr), ctrlSizeToNumPages(size));
 
     return 0;
 }
 
 static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddrPtr) {
     size_t pageIndex;
-    Result ret = ctrlReserveMappablePages(1, &pageIndex);
+    Result ret = ctrlReserveHeapPages(1, &pageIndex);
     if (R_FAILED(ret))
         return ret;
 

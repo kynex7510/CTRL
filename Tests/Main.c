@@ -18,8 +18,9 @@
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
 
-u32 __ctru_heap_size = (24 << 20);
-u32 __ctru_linear_heap_size = (24 << 20);
+// Ensure we have enough heap memory for code allocation.
+u32 __ctru_heap_size = (8 << 20);
+u32 __ctru_linear_heap_size = (8 << 20);
 
 /* APP INFO TEST */
 

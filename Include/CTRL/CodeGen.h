@@ -29,11 +29,11 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size);
 /**
  * @brief Reserve region memory for code allocation.
  * @param[in] region Region handle.
- * @param[out] allocAddr Allocation address (can be NULL).
- * @param[out] aliasAddr Alias address (can be NULL).
+ * @param[out] heapAddr Heap address (can be NULL).
+ * @param[out] execAddr Executable address (can be NULL).
  * @return Result code.
  */
-Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* allocAddr, u32* aliasAddr);
+Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* heapAddr, u32* execAddr);
 
 /**
  * @brief Commit a region of code.

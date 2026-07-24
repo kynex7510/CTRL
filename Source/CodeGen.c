@@ -16,8 +16,8 @@ typedef struct {
 } BlockHeader;
 
 typedef struct {
-    size_t allocPageIndex;
-    size_t aliasPageIndex;
+    size_t heapPageIndex;
+    size_t execPageIndex;
     u32 regionSize;
 } RegionHeader;
 
@@ -33,8 +33,8 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
         if (!r)
             return NULL;
 
-        r->allocPageIndex = 0;
-        r->aliasPageIndex = 0;
+        r->heapPageIndex = 0;
+        r->execPageIndex = 0;
         r->regionSize = newSize;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader)))->size = size;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader) + size))->size = 0;
@@ -53,8 +53,8 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     const size_t offsetToLastBlock = r->regionSize - sizeof(BlockHeader);
     const size_t offsetToNewBlock = newSize - sizeof(BlockHeader);
 
-    r->allocPageIndex = 0;
-    r->aliasPageIndex = 0;
+    r->heapPageIndex = 0;
+    r->execPageIndex = 0;
     r->regionSize = newSize;
     ((BlockHeader*)((u32)r + offsetToLastBlock))->size = size;
     ((BlockHeader*)((u32)r + offsetToNewBlock))->size = 0;
@@ -62,26 +62,26 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     return (u8*)((u32)r + offsetToLastBlock + sizeof(BlockHeader));
 }
 
-Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* allocAddr, u32* aliasAddr) {
+Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* heapAddr, u32* execAddr) {
     RegionHeader* r = (RegionHeader*)region;
 
-    if (!r->allocPageIndex) {
-        const Result ret = ctrlReserveMappablePages(ctrlSizeToNumPages(r->regionSize), &r->allocPageIndex);
+    if (!r->heapPageIndex) {
+        const Result ret = ctrlReserveHeapPages(ctrlSizeToNumPages(r->regionSize), &r->heapPageIndex);
         if (R_FAILED(ret))
             return ret;
     }
 
-    if (!r->aliasPageIndex) {
-        const Result ret = ctrlReserveExecutablePages(ctrlSizeToNumPages(r->regionSize), &r->aliasPageIndex);
+    if (!r->execPageIndex) {
+        const Result ret = ctrlReserveExecutablePages(ctrlSizeToNumPages(r->regionSize), &r->execPageIndex);
         if (R_FAILED(ret))
             return ret;
     }
 
-    if (allocAddr)
-        *allocAddr = ctrlPageIndexToAddr(r->allocPageIndex);
+    if (heapAddr)
+        *heapAddr = ctrlPageIndexToAddr(r->heapPageIndex);
 
-    if (aliasAddr)
-        *aliasAddr = ctrlPageIndexToAddr(r->aliasPageIndex);
+    if (execAddr)
+        *execAddr = ctrlPageIndexToAddr(r->execPageIndex);
 
     return 0;
 }
@@ -94,41 +94,41 @@ Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
     if (R_FAILED(ret))
         return ret;
 
-    // Allocate mappable memory.
+    // Allocate heap memory.
     const size_t numPages = ctrlSizeToNumPages(r->regionSize);
-    ret = ctrlMappableAlloc(r->allocPageIndex, numPages);
+    ret = ctrlHeapAlloc(r->heapPageIndex, numPages);
     if (R_FAILED(ret))
         return ret;
 
     // Copy data.
-    memcpy((void*)ctrlPageIndexToAddr(r->allocPageIndex), r, r->regionSize);
+    memcpy((void*)ctrlPageIndexToAddr(r->heapPageIndex), r, r->regionSize);
 
     // Map executable memory.
-    ret = ctrlMapExecutablePages(r->allocPageIndex, r->aliasPageIndex, numPages);
+    ret = ctrlMapExecutablePages(r->heapPageIndex, r->execPageIndex, numPages);
     if (R_FAILED(ret)) {
-        ctrlMappableFree(r->allocPageIndex, numPages);
+        ctrlHeapFree(r->heapPageIndex, numPages);
         return ret;
     }
 
-    *region = (CTRLCodeRegion)ctrlPageIndexToAddr(r->aliasPageIndex);
+    *region = (CTRLCodeRegion)ctrlPageIndexToAddr(r->execPageIndex);
     free(r);
     return ret;
 }
 
 Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
     RegionHeader* r = (RegionHeader*)*region;
-    const u32 allocAddr = ctrlPageIndexToAddr(r->allocPageIndex);
+    const u32 heapAddr = ctrlPageIndexToAddr(r->heapPageIndex);
     const size_t numPages = ctrlSizeToNumPages(r->regionSize);
 
-    Result ret = ctrlUnmapExecutablePages(r->allocPageIndex, r->aliasPageIndex, numPages);
+    Result ret = ctrlUnmapExecutablePages(r->heapPageIndex, r->execPageIndex, numPages);
     if (R_FAILED(ret))
         return ret;
 
-    *region = (CTRLCodeRegion)allocAddr;
-    r = (RegionHeader*)allocAddr;
-    r->aliasPageIndex = 0;
+    *region = (CTRLCodeRegion)heapAddr;
+    r = (RegionHeader*)heapAddr;
+    r->execPageIndex = 0;
 
-    ret = ctrlMappableFree(r->allocPageIndex, numPages);
+    ret = ctrlHeapFree(r->heapPageIndex, numPages);
     if (R_SUCCEEDED(ret))
         *region = NULL;
 
