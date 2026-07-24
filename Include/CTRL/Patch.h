@@ -6,8 +6,8 @@
  * @file Patch.h
  * @brief Patching utilities.
  */
-#ifndef _CTRL_PATCH_H
-#define _CTRL_PATCH_H
+#ifndef GUARD_CTRL_PATCH_H
+#define GUARD_CTRL_PATCH_H
 
 #include <CTRL/Defs.h>
 
@@ -52,4 +52,4 @@ CTRL_INLINE Result ctrlPatchMemory(Handle proc, u32 addr, const u8* data, size_t
 }
 #endif // __cplusplus
 
-#endif /* _CTRL_PATCH_H */
+#endif /* GUARD_CTRL_PATCH_H */
