@@ -27,14 +27,13 @@ extern "C" {
 u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size);
 
 /**
- * @brief Get the commit address for a code region.
- * If the code region has been committed return the address used,
- * otherwise return a hint that may be used for the commit.
+ * @brief Reserve region memory for code allocation.
  * @param[in] region Region handle.
- * @param[out] outAddr Base address or hint.
+ * @param[out] allocAddr Allocation address (can be NULL).
+ * @param[out] aliasAddr Alias address (can be NULL).
  * @return Result code.
  */
-Result ctrlCodeRegionBaseAddress(CTRLCodeRegion region, u32* outAddr);
+Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* allocAddr, u32* aliasAddr);
 
 /**
  * @brief Commit a region of code.

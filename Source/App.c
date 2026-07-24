@@ -30,13 +30,13 @@ static inline bool isCitraKnownEmulator(u32 id) { return id == EMULATOR_ID_CITRA
 static inline bool detectEnv(CTRLEnv* env) {
     s64 check = 0;
 
-    // Detected luma 8.0.0+.
+    // Detect luma 8.0.0+.
     if (R_SUCCEEDED(svcGetSystemInfo(&check, TYPE_LUMA_VERSION, 0)) && (check >= LUMA_SYSTEM_VERSION(8, 0, 0))) {
         *env = Env_Luma;
         return true;
     }
     
-    // Detected citra.
+    // Detect citra.
     if (R_SUCCEEDED(svcGetSystemInfo(&check, TYPE_CITRA_EMULATOR_ID, 0)) && isCitraKnownEmulator(check)) {
         *env = Env_Citra;
         return true;

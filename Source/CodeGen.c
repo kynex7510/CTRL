@@ -5,7 +5,7 @@
  */
 
 #include <CTRL/CodeGen.h>
-#include <CTRL/CodeAllocator.h>
+#include <CTRL/Allocator.h>
 #include <CTRL/Memory.h>
 
 #include <stdlib.h> // malloc, free, realloc
@@ -16,7 +16,8 @@ typedef struct {
 } BlockHeader;
 
 typedef struct {
-    u32 allocAddr;
+    size_t allocPageIndex;
+    size_t aliasPageIndex;
     u32 regionSize;
 } RegionHeader;
 
@@ -32,7 +33,8 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
         if (!r)
             return NULL;
 
-        r->allocAddr = 0;
+        r->allocPageIndex = 0;
+        r->aliasPageIndex = 0;
         r->regionSize = newSize;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader)))->size = size;
         ((BlockHeader*)((u32)r + sizeof(RegionHeader) + size))->size = 0;
@@ -51,7 +53,8 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     const size_t offsetToLastBlock = r->regionSize - sizeof(BlockHeader);
     const size_t offsetToNewBlock = newSize - sizeof(BlockHeader);
 
-    r->allocAddr = 0;
+    r->allocPageIndex = 0;
+    r->aliasPageIndex = 0;
     r->regionSize = newSize;
     ((BlockHeader*)((u32)r + offsetToLastBlock))->size = size;
     ((BlockHeader*)((u32)r + offsetToNewBlock))->size = 0;
@@ -59,60 +62,77 @@ u8* ctrlAllocCodeBlock(CTRLCodeRegion* region, size_t size) {
     return (u8*)((u32)r + offsetToLastBlock + sizeof(BlockHeader));
 }
 
-Result ctrlCodeRegionBaseAddress(CTRLCodeRegion region, u32* outAddr) {
+Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* allocAddr, u32* aliasAddr) {
     RegionHeader* r = (RegionHeader*)region;
 
-    if (r->allocAddr) {
-        *outAddr = r->allocAddr;
-        return 0;
+    if (!r->allocPageIndex) {
+        const Result ret = ctrlReserveMappablePages(ctrlSizeToNumPages(r->regionSize), &r->allocPageIndex);
+        if (R_FAILED(ret))
+            return ret;
     }
 
-    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
-    return ctrlNextCodeAllocAddress(numPages, outAddr);
+    if (!r->aliasPageIndex) {
+        const Result ret = ctrlReserveExecutablePages(ctrlSizeToNumPages(r->regionSize), &r->aliasPageIndex);
+        if (R_FAILED(ret))
+            return ret;
+    }
+
+    if (allocAddr)
+        *allocAddr = ctrlPageIndexToAddr(r->allocPageIndex);
+
+    if (aliasAddr)
+        *aliasAddr = ctrlPageIndexToAddr(r->aliasPageIndex);
+
+    return 0;
 }
 
 Result ctrlCommitCodeRegion(CTRLCodeRegion* region) {
     RegionHeader* r = (RegionHeader*)*region;
-    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
 
-    // Allocate code pages.
-    Result ret = ctrlAllocCodePages(numPages, &r->allocAddr);
+    // Ensure we have reserved memory.
+    Result ret = ctrlReserveCodeRegionMemory(*region, NULL, NULL);
+    if (R_FAILED(ret))
+        return ret;
+
+    // Allocate mappable memory.
+    const size_t numPages = ctrlSizeToNumPages(r->regionSize);
+    ret = ctrlMappableAlloc(r->allocPageIndex, numPages);
     if (R_FAILED(ret))
         return ret;
 
     // Copy data.
-    memcpy((void*)r->allocAddr, r, r->regionSize);
+    memcpy((void*)ctrlPageIndexToAddr(r->allocPageIndex), r, r->regionSize);
 
-    // Commit code pages.
-    u32 commitAddr = 0;
-    ret = ctrlCommitCodePages(r->allocAddr, numPages, &commitAddr);
+    // Map executable memory.
+    ret = ctrlMapExecutablePages(r->allocPageIndex, r->aliasPageIndex, numPages);
     if (R_FAILED(ret)) {
-        ctrlFreeCodePages(r->allocAddr, numPages);
-        r->allocAddr = 0;
+        ctrlMappableFree(r->allocPageIndex, numPages);
         return ret;
     }
 
+    *region = (CTRLCodeRegion)ctrlPageIndexToAddr(r->aliasPageIndex);
     free(r);
-    *region = (CTRLCodeRegion)commitAddr;
     return ret;
 }
 
 Result ctrlDestroyCodeRegion(CTRLCodeRegion* region) {
-    const RegionHeader* r = (RegionHeader*)*region;
-    const u32 allocAddr = r->allocAddr;
-    const u32 commitAddr = (u32)r;
+    RegionHeader* r = (RegionHeader*)*region;
+    const u32 allocAddr = ctrlPageIndexToAddr(r->allocPageIndex);
     const size_t numPages = ctrlSizeToNumPages(r->regionSize);
 
-    Result ret = ctrlReleaseCodePages(allocAddr, commitAddr, numPages);
+    Result ret = ctrlUnmapExecutablePages(r->allocPageIndex, r->aliasPageIndex, numPages);
     if (R_FAILED(ret))
         return ret;
 
-    ret = ctrlFreeCodePages(allocAddr, numPages);
-    if (R_FAILED(ret))
-        return ret;
+    *region = (CTRLCodeRegion)allocAddr;
+    r = (RegionHeader*)allocAddr;
+    r->aliasPageIndex = 0;
 
-    *region = NULL;
-    return 0;
+    ret = ctrlMappableFree(r->allocPageIndex, numPages);
+    if (R_SUCCEEDED(ret))
+        *region = NULL;
+
+    return ret;
 }
 
 u32 ctrlFirstCodeBlock(CTRLCodeRegion region) {

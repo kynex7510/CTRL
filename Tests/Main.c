@@ -8,8 +8,7 @@
 #include <CTRL/Hook.h>
 #include <CTRL/Exception.h>
 #include <CTRL/App.h>
-//#include <CTRL/CodeGen.h>
-//#include <CTRL/CodeAllocator.h>
+#include <CTRL/CodeGen.h>
 #include <CTRL/Arch.h>
 
 #include <stdlib.h>
@@ -18,6 +17,9 @@
 
 #define RAND_EXPECTED_RET 1337
 #define RAND_ACTUAL_RET 0
+
+u32 __ctru_heap_size = (24 << 20);
+u32 __ctru_linear_heap_size = (24 << 20);
 
 /* APP INFO TEST */
 
@@ -91,7 +93,6 @@ static bool exTest(void) {
 
 /* CODEGEN TEST */
 
-/*
 static bool setupCodeBlock(CTRLCodeRegion* codeRegion, const u8* bytes, size_t size) {
     u8* codeBlockData = ctrlAllocCodeBlock(codeRegion, size);
     if (codeBlockData) {
@@ -187,7 +188,6 @@ static bool codegenTest(void) {
     printf("SUCCESS\n");
     return true;
 }
-*/
 
 /* HOOK TEST */
 
@@ -242,7 +242,7 @@ static bool hookTest(void) {
 
 int main(int argc, char* argv[]) {
     typedef bool(*Test_t)(void);
-    Test_t tests[] = { appInfoTest, exTest, /*codegenTest,*/ hookTest };
+    Test_t tests[] = { appInfoTest, exTest, codegenTest, hookTest };
 
     const size_t numTests = sizeof(tests) / sizeof(Test_t);
 

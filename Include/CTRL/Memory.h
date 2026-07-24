@@ -18,6 +18,18 @@ extern "C" {
 #endif // __cplusplus
 
 /**
+ * @brief Convert address into page index.
+ * @return Page index.
+ */
+CTRL_INLINE size_t ctrlAddrToPageIndex(u32 addr) { return ctrlAlignDown(addr, CTRL_PAGE_SIZE) >> 12; }
+
+/**
+ * @brief Convert page index into address.
+ * @return Address.
+ */
+CTRL_INLINE u32 ctrlPageIndexToAddr(size_t pageIndex) { return pageIndex << 12; }
+
+/**
  * @brief Convert size in bytes into number of pages.
  * @return Number of pages.
  */
@@ -111,39 +123,39 @@ Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer);
 
 /**
  * @brief Remap a range of pages as read-write.
- * @param[in] addr Source address, must be page aligned.
- * @param[in] alias Alias address, must be page aligned.
- * @param[in] size Size, must be page aligned.
+ * @param[in] sourcePageIndex Source page index.
+ * @param[in] aliasPageIndex Alias page index.
+ * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlAliasMemory(u32 addr, u32 alias, size_t size);
+Result ctrlAliasPages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages);
 
 /**
- * @brief Restore aliased memory.
- * @param[in] addr Source address, must be page aligned.
- * @param[in] alias Alias address, must be page aligned.
- * @param[in] size Size, must be page aligned.
+ * @brief Restore aliased pages.
+ * @param[in] sourcePageIndex Source page index.
+ * @param[in] aliasPageIndex Alias page index.
+ * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlUnaliasMemory(u32 addr, u32 alias, size_t size);
+Result ctrlUnaliasPages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages);
 
 /**
- * @brief Remap memory in the code region.
- * @param[in] addr Allocation address.
- * @param[in] size Size.
- * @param[out] outCommitAddr Commit address.
+ * @brief Remap pages as executable.
+ * @param[in] sourcePageIndex Source page index.
+ * @param[in] aliasPageIndex Alias page index.
+ * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlMapCode(u32 addr, size_t size, u32* outCommitAddr);
+Result ctrlMapExecutablePages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages);
 
 /**
- * @brief Restore mapped code.
- * @param[in] addr Allocation address.
- * @param[in] commitAddr Commit address.
- * @param[in] size Size.
+ * @brief Restore pages mapped as executable.
+ * @param[in] sourcePageIndex Source page index.
+ * @param[in] aliasPageIndex Alias page index.
+ * @param[in] numPages Number of pages.
  * @return Result code.
  */
-Result ctrlUnmapCode(u32 addr, u32 commitAddr, size_t size);
+Result ctrlUnmapExecutablePages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages);
 
 #ifdef __cplusplus
 }

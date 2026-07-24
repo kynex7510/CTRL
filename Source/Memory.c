@@ -20,7 +20,7 @@
 
 #include <CTRL/Memory.h>
 #include <CTRL/App.h>
-#include <CTRL/Mappable.h>
+#include <CTRL/Allocator.h>
 
 #include "Syscalls.h"
 
@@ -110,22 +110,22 @@ Result ctrlUnshareMemory(Handle dstProc, u32 dstAddr, size_t size) {
     // TODO:
     // Workaround a bug which doesn't restore the true memstate field.
     // This workaround is currently only available for the current process.
-    if (ctrlIsThisProcess(dstProc)) {
-        u32 dummy;
-        return svcControlMemoryUnsafe(&dummy, dstAddr, size, MEMOP_FREE, 0);
-    }
+    if (ctrlIsThisProcess(dstProc))
+        ctrlMappableFree(ctrlAddrToPageIndex(dstAddr), ctrlSizeToNumPages(size));
 
     return 0;
 }
 
-static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddr) {
-    Result ret = ctrlReserveMappableMemory(CTRL_PAGE_SIZE, thisAddr);
+static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddrPtr) {
+    size_t pageIndex;
+    Result ret = ctrlReserveMappablePages(1, &pageIndex);
     if (R_FAILED(ret))
         return ret;
 
-    ret = ctrlShareMemory(proc, CUR_PROCESS_HANDLE, otherAddr, *thisAddr, CTRL_PAGE_SIZE, MEMPERM_READWRITE);
-    if (R_FAILED(ret))
-        *thisAddr = 0;
+    const u32 thisAddr = ctrlPageIndexToAddr(pageIndex);
+    ret = ctrlShareMemory(proc, CUR_PROCESS_HANDLE, otherAddr, thisAddr, CTRL_PAGE_SIZE, MEMPERM_READWRITE);
+    if (R_SUCCEEDED(ret))
+        *thisAddrPtr = thisAddr;
 
     return ret;
 }
@@ -223,8 +223,12 @@ Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer) {
     return 0;
 }
 
-Result ctrlAliasMemory(u32 addr, u32 alias, size_t size) {
+Result ctrlAliasPages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages) {
     Result ret = 0;
+
+    const size_t addr = ctrlPageIndexToAddr(sourcePageIndex);
+    const size_t alias = ctrlPageIndexToAddr(aliasPageIndex);
+    const size_t size = ctrlNumPagesToSize(numPages);
 
     if (ctrlEnv() == Env_Citra) {
         u32 out;
@@ -242,7 +246,7 @@ Result ctrlAliasMemory(u32 addr, u32 alias, size_t size) {
     return ret;
 }
 
-Result ctrlUnaliasMemory(u32 addr, u32 alias, size_t size) {
+Result ctrlUnaliasPages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages) {
     Result ret = 0;
     bool isCitra = (ctrlEnv() == Env_Citra);
     Handle proc = CUR_PROCESS_HANDLE;
@@ -252,6 +256,10 @@ Result ctrlUnaliasMemory(u32 addr, u32 alias, size_t size) {
         if (R_FAILED(ret))
             return ret;
     }
+
+    const u32 addr = ctrlPageIndexToAddr(sourcePageIndex);
+    const u32 alias = ctrlPageIndexToAddr(aliasPageIndex);
+    const size_t size = ctrlNumPagesToSize(numPages);
 
     size_t processedData = 0;
     while (processedData < size) {
@@ -278,5 +286,35 @@ Result ctrlUnaliasMemory(u32 addr, u32 alias, size_t size) {
     if (!isCitra)
         svcCloseHandle(proc);
     
+    return ret;
+}
+
+Result ctrlMapExecutablePages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages) {
+    // Alias memory.
+    Result ret = ctrlAliasPages(sourcePageIndex, aliasPageIndex, numPages);
+    if (R_FAILED(ret))
+        return ret;
+
+    // Make it executable.
+    ret = ctrlChangeMemoryPerms(CUR_PROCESS_HANDLE, ctrlPageIndexToAddr(aliasPageIndex), ctrlNumPagesToSize(numPages), MEMPERM_READEXECUTE);
+    if (R_FAILED(ret)) {
+        ctrlUnaliasPages(sourcePageIndex, aliasPageIndex, numPages);
+        return ret;
+    }
+
+    // Handle cache.
+    ctrlFlushDataCache();
+    ctrlInvalidateInstructionCache();
+    return 0;
+}
+
+Result ctrlUnmapExecutablePages(size_t sourcePageIndex, size_t aliasPageIndex, size_t numPages) {
+    const Result ret = ctrlUnaliasPages(sourcePageIndex, aliasPageIndex, numPages);
+
+    if (R_SUCCEEDED(ret)) {
+        ctrlFlushDataCache();
+        ctrlInvalidateInstructionCache();
+    }
+
     return ret;
 }

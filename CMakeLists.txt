@@ -7,12 +7,12 @@ project(CTRL LANGUAGES C ASM)
 option(CTRL_BUILD_TESTS "Enable tests compilation" OFF)
 
 set(CTRL_SOURCES
+    Source/Allocator.c
     Source/App.c
-    #Source/CodeGen.c
+    Source/CodeGen.c
     Source/Exception.c
     Source/ExHandler.s
     Source/Hook.c
-    Source/Mappable.c
     Source/Memory.c
     Source/Patch.c
     Source/Syscalls.s

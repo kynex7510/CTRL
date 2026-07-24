@@ -13,18 +13,18 @@
 
 /// @brief Environment values.
 typedef enum {
-    Env_Luma,   ///< Luma 8.0.0+
-    Env_Citra,  ///< Citra (and derived forks)
+    Env_Luma,   ///< Luma 8.0.0+.
+    Env_Citra,  ///< Citra (and derived forks).
 } CTRLEnv;
 
 /// @brief Application sections info.
 typedef struct {
-    u32 textAddr;      ///< Application .text address
-    size_t textSize;   ///< Application .text size
-    u32 rodataAddr;    ///< Application .rodata address
-    size_t rodataSize; ///< Application .rodata size
-    u32 dataAddr;      ///< Application .data address
-    size_t dataSize;   ///< Application .data size
+    u32 textAddr;      ///< Application .text address.
+    size_t textSize;   ///< Application .text size.
+    u32 rodataAddr;    ///< Application .rodata address.
+    size_t rodataSize; ///< Application .rodata size.
+    u32 dataAddr;      ///< Application .data address.
+    size_t dataSize;   ///< Application .data size.
 } CTRLAppSectionInfo;
 
 #ifdef __cplusplus
