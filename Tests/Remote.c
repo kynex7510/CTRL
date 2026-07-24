@@ -14,9 +14,6 @@
 #define TARGET_PID 20 // GSP
 #define TARGET_ADDR 0x100000 // Code region
 
-// Reserve 1 page (4kb) of heap memory for remote transfers.
-size_t __ctrl_code_allocator_pages = 1;
-
 int main(int argc, char* argv[]) {
     gfxInitDefault();
     consoleInit(GFX_TOP, NULL);

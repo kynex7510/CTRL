@@ -20,18 +20,11 @@
 
 #include <CTRL/Memory.h>
 #include <CTRL/App.h>
-#include <CTRL/CodeAllocator.h>
+#include <CTRL/Mappable.h>
+
+#include "Syscalls.h"
 
 #include <string.h> // memcpy
-
-typedef enum MapExFlags {
-    MAPEXFLAGS_PRIVATE = BIT(0),
-} MapExFlags;
-
-extern void svcFlushEntireDataCache(void);
-extern void svcInvalidateEntireInstructionCache(void);
-extern Result svcMapProcessMemoryEx(Handle dstProc, u32 vaDst, Handle srcProc, u32 vaSrc, u32 size, MapExFlags flags);
-extern Result svcUnmapProcessMemoryEx(Handle proc, u32 addr, u32 size);
 
 void ctrlFlushDataCache(void) { svcFlushEntireDataCache(); }
 void ctrlInvalidateInstructionCache(void) { svcInvalidateEntireInstructionCache(); }
@@ -76,7 +69,7 @@ Result ctrlQueryMemoryRegion(Handle proc, u32 addr, MemInfo* memInfo) {
 
 Result ctrlChangeMemoryPerms(Handle proc, u32 addr, size_t size, MemPerm perms) {
     if (ctrlEnv() == Env_Citra)
-        return proc == CUR_PROCESS_HANDLE ? 0 : MAKERESULT(RL_PERMANENT, RS_NOTSUPPORTED, RM_OS, RD_NOT_IMPLEMENTED);
+        return ctrlIsThisProcess(proc) ? 0 : MAKERESULT(RL_PERMANENT, RS_NOTSUPPORTED, RM_OS, RD_NOT_IMPLEMENTED);
 
     bool needsClose = false;
     if (proc == CUR_PROCESS_HANDLE) {
@@ -97,12 +90,40 @@ Result ctrlChangeMemoryPerms(Handle proc, u32 addr, size_t size, MemPerm perms) 
     return ret;
 }
 
-static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddr) {
-    Result ret = ctrlNextCodeAllocAddress(1, thisAddr);
+Result ctrlShareMemory(Handle srcProc, Handle dstProc, u32 srcAddr, u32 dstAddr, size_t size, MemPerm dstPerms) {
+    Result ret = svcMapProcessMemoryEx(dstProc, dstAddr, srcProc, srcAddr, size, MAPEXFLAGS_PRIVATE);
     if (R_FAILED(ret))
         return ret;
 
-    ret = svcMapProcessMemoryEx(CUR_PROCESS_HANDLE, *thisAddr, proc, otherAddr, CTRL_PAGE_SIZE, MAPEXFLAGS_PRIVATE);
+    ret = ctrlChangeMemoryPerms(dstProc, dstAddr, size, dstPerms);
+    if (R_FAILED(ret))
+        ctrlUnshareMemory(dstProc, dstAddr, size);
+
+    return ret;
+}
+
+Result ctrlUnshareMemory(Handle dstProc, u32 dstAddr, size_t size) {
+    const Result ret = svcUnmapProcessMemoryEx(dstProc, dstAddr, size);
+    if (R_FAILED(ret))
+        return ret;
+
+    // TODO:
+    // Workaround a bug which doesn't restore the true memstate field.
+    // This workaround is currently only available for the current process.
+    if (ctrlIsThisProcess(dstProc)) {
+        u32 dummy;
+        return svcControlMemoryUnsafe(&dummy, dstAddr, size, MEMOP_FREE, 0);
+    }
+
+    return 0;
+}
+
+static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddr) {
+    Result ret = ctrlReserveMappableMemory(CTRL_PAGE_SIZE, thisAddr);
+    if (R_FAILED(ret))
+        return ret;
+
+    ret = ctrlShareMemory(proc, CUR_PROCESS_HANDLE, otherAddr, *thisAddr, CTRL_PAGE_SIZE, MEMPERM_READWRITE);
     if (R_FAILED(ret))
         *thisAddr = 0;
 
@@ -110,12 +131,7 @@ static Result mapProcPage(Handle proc, u32 otherAddr, u32* thisAddr) {
 }
 
 static Result unmapProcPage(u32 thisAddr) {
-    const Result ret = svcUnmapProcessMemoryEx(CUR_PROCESS_HANDLE, thisAddr, CTRL_PAGE_SIZE);
-    if (R_FAILED(ret))
-        return ret;
-
-    u32 dummy;
-    return svcControlMemory(&dummy, thisAddr, 0, CTRL_PAGE_SIZE, MEMOP_FREE, 0);
+    return ctrlUnshareMemory(CUR_PROCESS_HANDLE, thisAddr, CTRL_PAGE_SIZE);
 }
 
 static Result safeMemCpy(void* dst, const void* src, size_t size) {
@@ -144,7 +160,7 @@ static Result safeMemCpy(void* dst, const void* src, size_t size) {
 }
 
 Result ctrlReadMemory(Handle proc, u32 addr, size_t size, void* buffer) {
-    if (proc == CUR_PROCESS_HANDLE)
+    if (ctrlIsThisProcess(proc))
         return safeMemCpy(buffer, (const void*)addr, size);
 
     u8* out = (u8*)buffer;
@@ -176,7 +192,7 @@ Result ctrlReadMemory(Handle proc, u32 addr, size_t size, void* buffer) {
 }
 
 Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer) {
-    if (proc == CUR_PROCESS_HANDLE)
+    if (ctrlIsThisProcess(proc))
         return safeMemCpy((void*)addr, buffer, size);
 
     const u8* in = (const u8*)buffer;
@@ -207,7 +223,7 @@ Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer) {
     return 0;
 }
 
-Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size) {
+Result ctrlAliasMemory(u32 addr, u32 alias, size_t size) {
     Result ret = 0;
 
     if (ctrlEnv() == Env_Citra) {
@@ -226,7 +242,7 @@ Result ctrlMapAliasMemory(u32 addr, u32 alias, size_t size) {
     return ret;
 }
 
-Result ctrlUnmapAliasMemory(u32 addr, u32 alias, size_t size) {
+Result ctrlUnaliasMemory(u32 addr, u32 alias, size_t size) {
     Result ret = 0;
     bool isCitra = (ctrlEnv() == Env_Citra);
     Handle proc = CUR_PROCESS_HANDLE;

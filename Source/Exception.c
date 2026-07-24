@@ -26,7 +26,7 @@ void ctrlEnableExceptionHandling(void) {
         tls[TLS_EX_CTX_SLOT] = 1; // Write context data to faulty thread stack.
 
         __dsb();
-	    __isb();
+        __isb();
     }
 }
 
@@ -39,7 +39,7 @@ void ctrlDisableExceptionHandling(void) {
         tls[TLS_EX_CTX_SLOT] = 0;
 
         __dsb();
-	    __isb();
+        __isb();
     }
 }
 

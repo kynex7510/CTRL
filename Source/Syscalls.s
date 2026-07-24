@@ -8,6 +8,7 @@
 .global svcInvalidateEntireInstructionCache
 .global svcMapProcessMemoryEx
 .global svcUnmapProcessMemoryEx
+.global svcControlMemoryUnsafe
 
 .section .text
 
@@ -34,4 +35,12 @@ svcMapProcessMemoryEx:
 .type svcUnmapProcessMemoryEx, %function
 svcUnmapProcessMemoryEx:
     svc 0xA1
+    bx lr
+
+.type svcControlMemoryUnsafe, %function
+svcControlMemoryUnsafe:
+    str r4, [sp, #-4]!
+    ldr r4, [sp, #4]
+    svc 0xA3
+    ldr r4, [sp], #4
     bx lr

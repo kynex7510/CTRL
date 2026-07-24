@@ -8,11 +8,11 @@ option(CTRL_BUILD_TESTS "Enable tests compilation" OFF)
 
 set(CTRL_SOURCES
     Source/App.c
-    Source/CodeAllocator.c
-    Source/CodeGen.c
+    #Source/CodeGen.c
     Source/Exception.c
     Source/ExHandler.s
     Source/Hook.c
+    Source/Mappable.c
     Source/Memory.c
     Source/Patch.c
     Source/Syscalls.s
