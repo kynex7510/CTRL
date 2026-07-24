@@ -79,3 +79,20 @@ static __attribute((constructor)) void initAppSectionInfo(void) {
 
 CTRLEnv ctrlEnv(void) { return g_Env; }
 const CTRLAppSectionInfo* ctrlAppSectionInfo(void) { return &g_AppSectionInfo; }
+
+bool ctrlIsThisPID(u32 pid) {
+    u32 out;
+    if (R_SUCCEEDED(svcGetProcessId(&out, CUR_PROCESS_HANDLE)))
+        return out == pid;
+
+    svcBreak(USERBREAK_PANIC);
+    return false;
+}
+
+bool ctrlIsThisProcess(Handle proc) {
+    u32 pid;
+    if (R_SUCCEEDED(svcGetProcessId(&pid, proc)))
+        return ctrlIsThisPID(pid);
+
+    return false;
+}

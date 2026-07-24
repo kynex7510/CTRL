@@ -43,6 +43,20 @@ CTRLEnv ctrlEnv(void);
  */
 const CTRLAppSectionInfo* ctrlAppSectionInfo(void);
 
+/**
+ * @brief Check whether the given PID is of this process.
+ * @param[in] pid Process ID.
+ * @return True if \ref pid is this process' ID, false otherwise.
+ */
+bool ctrlIsThisPID(u32 pid);
+
+/**
+ * @brief Check whether the given handle is of this process.
+ * @param[in] proc Process handle.
+ * @return True if \ref proc is this process' handle, false otherwise.
+ */
+bool ctrlIsThisProcess(Handle proc);
+
 #ifdef __cplusplus
 }
 #endif // __cplusplus
