@@ -21,6 +21,17 @@ static Result setupHeapAllocator(void) {
 
     // Find first free page after application heap.
     u32 curAddr = __ctru_heap + __ctru_heap_size;
+
+#if defined(CTRL_CFG_HEAP_OFFSET)
+    u32 minAddr = OS_HEAP_AREA_BEGIN + CTRL_CFG_HEAP_OFFSET;
+
+    if (minAddr < OS_HEAP_AREA_BEGIN)
+        minAddr = OS_HEAP_AREA_BEGIN;
+
+    if (curAddr < minAddr)
+        curAddr = minAddr;
+#endif // CTRL_CFG_HEAP_OFFSET
+
     u32 heapBase = 0;
 
     while (curAddr < OS_HEAP_AREA_END) {
@@ -65,6 +76,19 @@ static Result setupHeapAllocator(void) {
 
     if (!heapSize)
         return ERR_NO_MEM;
+
+#if defined(CTRL_CFG_HEAP_SIZE)
+    size_t wantedSize = ctrlAlignUp(CTRL_CFG_HEAP_SIZE, CTRL_PAGE_SIZE);
+
+    if (wantedSize > (OS_HEAP_AREA_END - OS_HEAP_AREA_BEGIN))
+        wantedSize = OS_HEAP_AREA_END - OS_HEAP_AREA_BEGIN;
+    
+    if (heapSize < wantedSize)
+        return ERR_NO_MEM;
+
+    if (heapSize > wantedSize)
+        heapSize = wantedSize;
+#endif // CTRL_CFG_HEAP_SIZE
 
     g_HeapAllocator.proc = CUR_PROCESS_HANDLE;
     g_HeapAllocator.base = ctrlAddrToPageIndex(heapBase);

@@ -16,6 +16,14 @@ add_library(CTRL STATIC ${CTRL_SOURCES})
 target_include_directories(CTRL PUBLIC ${CMAKE_SOURCE_DIR}/Include)
 target_compile_options(CTRL PRIVATE -O2 -Wall -Wno-switch)
 
+if (CTRL_CFG_HEAP_OFFSET)
+    target_compile_definitions(CTRL PUBLIC -DCTRL_CFG_HEAP_OFFSET=${CTRL_CFG_HEAP_OFFSET})
+endif()
+
+if (CTRL_CFG_HEAP_SIZE)
+    target_compile_definitions(CTRL PUBLIC -DCTRL_CFG_HEAP_SIZE=${CTRL_CFG_HEAP_SIZE})
+endif()
+
 if (CTRL_CFG_EXEC_BASE)
     target_compile_definitions(CTRL PUBLIC -DCTRL_CFG_EXEC_BASE=${CTRL_CFG_EXEC_BASE})
 endif()
