@@ -5,7 +5,8 @@
  */
 
 #include <CTRL/CodeGen.h>
-#include <CTRL/Allocator.h>
+#include <CTRL/Code.h>
+#include <CTRL/Heap.h>
 #include <CTRL/Memory.h>
 
 #include <stdlib.h> // malloc, free, realloc

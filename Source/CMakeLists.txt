@@ -1,12 +1,14 @@
 set(CTRL_SOURCES
-    Allocator.c
     App.c
+    Code.c
     CodeGen.c
     Exception.c
     ExHandler.s
+    Heap.c
     Hook.c
     Memory.c
     Patch.c
+    RingAllocator.c
     Syscalls.s
 )
 

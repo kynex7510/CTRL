@@ -1,0 +1,93 @@
+/**
+ * Boost Software License - Version 1.0 - August 17th, 2003
+ * Copyright (c) 2024-2026 Kynex7510
+ * See the LICENSE file for more info.
+ */
+
+#include <CTRL/Heap.h>
+#include <CTRL/RingAllocator.h>
+#include <CTRL/Memory.h>
+#include <CTRL/App.h>
+
+#include "Syscalls.h"
+
+#define ERR_NO_MEM MAKERESULT(RL_STATUS, RS_OUTOFRESOURCE, RM_OS, 0x0A)
+
+static CTRLRingAllocator g_HeapAllocator;
+
+static Result setupHeapAllocator(void) {
+    extern u32 __ctru_heap;
+    extern u32 __ctru_heap_size;
+
+    // Find first free page after application heap.
+    u32 curAddr = __ctru_heap + __ctru_heap_size;
+    u32 heapBase = 0;
+
+    while (curAddr < OS_HEAP_AREA_END) {
+        MemInfo memInfo;
+        PageInfo pageInfo;
+        const Result ret = svcQueryMemory(&memInfo, &pageInfo, curAddr);
+        if (R_FAILED(ret))
+            return ret;
+
+        if (memInfo.base_addr >= OS_HEAP_AREA_BEGIN && memInfo.state == MEMSTATE_FREE) {
+            heapBase = memInfo.base_addr;
+            break;
+        }
+
+        curAddr = memInfo.base_addr + memInfo.size;
+    }
+
+    if (!heapBase)
+        return ERR_NO_MEM;
+
+    // Find consecutive pages.
+    curAddr = heapBase;
+    size_t heapSize = 0;
+    const size_t maxHeapSize = OS_HEAP_AREA_END - heapBase;
+
+    while (heapSize < maxHeapSize) {
+        MemInfo memInfo;
+        PageInfo pageInfo;
+        const Result ret = svcQueryMemory(&memInfo, &pageInfo, curAddr);
+        if (R_FAILED(ret))
+            return ret;
+
+        if (memInfo.state != MEMSTATE_FREE)
+            break;
+
+        heapSize += memInfo.size;
+        if (heapSize > maxHeapSize)
+            heapSize = maxHeapSize;
+
+        curAddr = heapBase + heapSize;
+    }
+
+    if (!heapSize)
+        return ERR_NO_MEM;
+
+    g_HeapAllocator.proc = CUR_PROCESS_HANDLE;
+    g_HeapAllocator.base = ctrlAddrToPageIndex(heapBase);
+    g_HeapAllocator.max = ctrlAddrToPageIndex(heapBase + heapSize);
+    g_HeapAllocator.offset = 0;
+    return 0;
+}
+
+__attribute((constructor)) void ctrlInitHeapAllocator(void) {
+    if (R_FAILED(setupHeapAllocator()))
+        svcBreak(USERBREAK_PANIC);
+}
+
+Result ctrlReserveHeapPages(size_t numPages, size_t* outPageIndex) {
+    return ctrlRingAllocatorReservePages(&g_HeapAllocator, numPages, outPageIndex);
+}
+
+Result ctrlHeapAlloc(size_t pageIndex, size_t numPages) {
+    u32 dummy;
+    return svcControlMemory(&dummy, ctrlPageIndexToAddr(pageIndex), 0, ctrlNumPagesToSize(numPages), MEMOP_ALLOC, MEMPERM_READWRITE);
+}
+
+Result ctrlHeapFree(size_t pageIndex, size_t numPages) {
+    u32 dummy;
+    return svcControlMemory(&dummy, ctrlPageIndexToAddr(pageIndex), 0, ctrlNumPagesToSize(numPages), MEMOP_FREE, 0);
+}

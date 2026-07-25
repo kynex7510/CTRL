@@ -3,11 +3,11 @@
  * Copyright (c) 2024-2026 Kynex7510
  * See the LICENSE file for more info.
  * 
- * @file Allocator.h
- * @brief Allocator utilities.
+ * @file Heap.h
+ * @brief Heap utilities.
  */
-#ifndef GUARD_CTRL_ALLOCATOR_H
-#define GUARD_CTRL_ALLOCATOR_H
+#ifndef GUARD_CTRL_HEAP_H
+#define GUARD_CTRL_HEAP_H
 
 #include <CTRL/Defs.h>
 
@@ -39,16 +39,8 @@ Result ctrlHeapAlloc(size_t pageIndex, size_t numPages);
  */
 Result ctrlHeapFree(size_t pageIndex, size_t numPages);
 
-/**
- * @brief Reserve executable pages.
- * @param[in] numPages Number of pages.
- * @param[out] outPageIndex Allocation page index.
- * @return Result code.
- */
-Result ctrlReserveExecutablePages(size_t numPages, size_t* outPageIndex);
-
 #ifdef __cplusplus
 }
 #endif // __cplusplus
 
-#endif /* GUARD_CTRL_ALLOCATOR_H */
+#endif /* GUARD_CTRL_HEAP_H */

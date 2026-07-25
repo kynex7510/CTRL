@@ -20,7 +20,7 @@
 
 #include <CTRL/Memory.h>
 #include <CTRL/App.h>
-#include <CTRL/Allocator.h>
+#include <CTRL/Heap.h>
 
 #include "Syscalls.h"
 
