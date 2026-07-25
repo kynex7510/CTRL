@@ -71,7 +71,7 @@ static Result setupHeapAllocator(void) {
     return 0;
 }
 
-static __attribute((constructor)) void initHeapAllocator(void) {
+__attribute((constructor)) void ctrlInitHeapAllocator(void) {
     if (R_FAILED(setupHeapAllocator()))
         svcBreak(USERBREAK_PANIC);
 }

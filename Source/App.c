@@ -67,12 +67,12 @@ static inline Result getAppSectionInfo(CTRLAppSectionInfo* out) {
     return 0;
 }
 
-static __attribute((constructor)) void initEnv(void) {
+__attribute((constructor)) void ctrlInitEnv(void) {
     if (!detectEnv(&g_Env))
         svcBreak(USERBREAK_PANIC);
 }
 
-static __attribute((constructor)) void initAppSectionInfo(void) {
+__attribute((constructor)) void ctrlInitAppSectionInfo(void) {
     if (R_FAILED(getAppSectionInfo(&g_AppSectionInfo)))
         svcBreak(USERBREAK_PANIC);
 }
