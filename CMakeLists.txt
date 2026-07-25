@@ -6,24 +6,7 @@ project(CTRL LANGUAGES C ASM)
 
 option(CTRL_BUILD_TESTS "Enable tests compilation" OFF)
 
-set(CTRL_SOURCES
-    Source/Allocator.c
-    Source/App.c
-    Source/CodeGen.c
-    Source/Exception.c
-    Source/ExHandler.s
-    Source/Hook.c
-    Source/Memory.c
-    Source/Patch.c
-    Source/Syscalls.s
-)
-
-add_library(CTRL STATIC ${CTRL_SOURCES})
-target_include_directories(CTRL PUBLIC Include)
-target_compile_options(CTRL PRIVATE -O2 -Wall -Wno-switch)
-
-install(TARGETS CTRL)
-install(DIRECTORY Include/CTRL DESTINATION include)
+add_subdirectory(Source)
 
 if (CTRL_BUILD_TESTS)
     add_subdirectory(Tests)
