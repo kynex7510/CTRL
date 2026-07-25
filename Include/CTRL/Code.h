@@ -16,12 +16,12 @@ extern "C" {
 #endif // __cplusplus
 
 /**
- * @brief Reserve executable pages.
+ * @brief Reserve code pages.
  * @param[in] numPages Number of pages.
  * @param[out] outPageIndex Allocation page index.
  * @return Result code.
  */
-Result ctrlReserveExecutablePages(size_t numPages, size_t* outPageIndex);
+Result ctrlReserveCodePages(size_t numPages, size_t* outPageIndex);
 
 #ifdef __cplusplus
 }

@@ -73,7 +73,7 @@ Result ctrlReserveCodeRegionMemory(CTRLCodeRegion region, u32* heapAddr, u32* ex
     }
 
     if (!r->execPageIndex) {
-        const Result ret = ctrlReserveExecutablePages(ctrlSizeToNumPages(r->regionSize), &r->execPageIndex);
+        const Result ret = ctrlReserveCodePages(ctrlSizeToNumPages(r->regionSize), &r->execPageIndex);
         if (R_FAILED(ret))
             return ret;
     }

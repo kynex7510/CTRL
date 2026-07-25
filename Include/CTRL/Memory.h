@@ -122,7 +122,7 @@ Result ctrlReadMemory(Handle proc, u32 addr, size_t size, void* buffer);
 Result ctrlWriteMemory(Handle proc, u32 addr, size_t size, const void* buffer);
 
 /**
- * @brief Remap a range of pages as read-write.
+ * @brief Remap a range of pages as RW.
  * @param[in] sourcePageIndex Source page index.
  * @param[in] aliasPageIndex Alias page index.
  * @param[in] numPages Number of pages.

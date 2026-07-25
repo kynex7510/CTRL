@@ -44,7 +44,7 @@ static size_t maxPageForCodeBase(size_t pageBase) {
 #endif // CTRL_CFG_EXEC_SIZE
 }
 
-Result ctrlReserveExecutablePages(size_t numPages, size_t* outPageIndex) {
+Result ctrlReserveCodePages(size_t numPages, size_t* outPageIndex) {
     static size_t offset = 0;
 
     CTRLRingAllocator codeAllocator;
