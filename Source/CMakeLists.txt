@@ -23,4 +23,4 @@ if (CTRL_CFG_EXEC_SIZE)
 endif()
 
 install(TARGETS CTRL)
-install(DIRECTORY Include/CTRL DESTINATION include)
+install(DIRECTORY ${CMAKE_SOURCE_DIR}/Include/CTRL DESTINATION include)
