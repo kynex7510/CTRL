@@ -41,8 +41,13 @@ static Result setupHeapAllocator(void) {
         if (R_FAILED(ret))
             return ret;
 
-        if (memInfo.base_addr >= OS_HEAP_AREA_BEGIN && memInfo.state == MEMSTATE_FREE) {
+        // In some cases the heap area might not be initialized, thus we get a bigger range than expected.
+        if (memInfo.base_addr <= OS_HEAP_AREA_BEGIN && (memInfo.base_addr + memInfo.size) >= OS_HEAP_AREA_BEGIN && memInfo.state == MEMSTATE_FREE) {
             heapBase = memInfo.base_addr;
+
+            if (heapBase < OS_HEAP_AREA_BEGIN)
+                heapBase = OS_HEAP_AREA_BEGIN;
+
             break;
         }
 
