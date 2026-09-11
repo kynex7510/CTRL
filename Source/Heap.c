@@ -41,20 +41,24 @@ static Result setupHeapAllocator(void) {
         if (R_FAILED(ret))
             return ret;
 
-        // In some cases the heap area might not be initialized, thus we get a bigger range than expected.
-        if (memInfo.base_addr <= OS_HEAP_AREA_BEGIN && (memInfo.base_addr + memInfo.size) >= OS_HEAP_AREA_BEGIN && memInfo.state == MEMSTATE_FREE) {
-            heapBase = memInfo.base_addr;
+        if (memInfo.state == MEMSTATE_FREE) {
+            // Check if we have a free range within the heap area.
+            if (memInfo.base_addr >= OS_HEAP_AREA_BEGIN) {
+                heapBase = memInfo.base_addr;
+                break;
+            }
 
-            if (heapBase < OS_HEAP_AREA_BEGIN)
+            // In some cases the heap area might not be initialized, thus we get a bigger range than expected.
+            if (memInfo.base_addr <= OS_HEAP_AREA_BEGIN && (memInfo.base_addr + memInfo.size) > OS_HEAP_AREA_BEGIN) {
                 heapBase = OS_HEAP_AREA_BEGIN;
-
-            break;
+                break;
+            }
         }
 
         curAddr = memInfo.base_addr + memInfo.size;
     }
 
-    if (!heapBase)
+    if (!heapBase || heapBase > OS_HEAP_AREA_END)
         return ERR_NO_MEM;
 
     // Find consecutive pages.
