@@ -10,13 +10,23 @@
 #define ERR_NO_MEM MAKERESULT(RL_STATUS, RS_OUTOFRESOURCE, RM_OS, 0x0A)
 
 static Result findFreeRange(Handle proc, size_t numPages, size_t curIndex, size_t maxIndex, size_t* outPageIndex) {
-    u32 curAddr = ctrlPageIndexToAddr(curIndex);
+    u32 startAddr = ctrlPageIndexToAddr(curIndex);
+    u32 curAddr = startAddr;
 
     while (curAddr < ctrlPageIndexToAddr(maxIndex)) {
         MemInfo memInfo;
         Result ret = ctrlQueryMemoryRegion(proc, curAddr, &memInfo);
         if (R_FAILED(ret))
             return ret;
+
+        if (memInfo.base_addr < startAddr) {
+            if (memInfo.base_addr + memInfo.size >= startAddr) {
+                memInfo.size -= startAddr - memInfo.base_addr;
+                memInfo.base_addr = startAddr;
+            } else {
+                memInfo.state = -1;
+            }
+        }
 
         if (memInfo.state == MEMSTATE_FREE && ctrlSizeToNumPages(memInfo.size) >= numPages) {
             *outPageIndex = ctrlAddrToPageIndex(memInfo.base_addr);
