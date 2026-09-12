@@ -20,16 +20,14 @@ static Result setupHeapAllocator(void) {
     extern u32 __ctru_heap_size;
 
     // Find first free page after application heap.
+    u32 minAddr = OS_HEAP_AREA_BEGIN;
     u32 curAddr = __ctru_heap + __ctru_heap_size;
 
 #if defined(CTRL_CFG_HEAP_OFFSET)
-    u32 minAddr = OS_HEAP_AREA_BEGIN + CTRL_CFG_HEAP_OFFSET;
+    minAddr += CTRL_CFG_HEAP_OFFSET;
 
     if (minAddr < OS_HEAP_AREA_BEGIN)
         minAddr = OS_HEAP_AREA_BEGIN;
-
-    if (curAddr < minAddr)
-        curAddr = minAddr;
 #endif // CTRL_CFG_HEAP_OFFSET
 
     u32 heapBase = 0;
@@ -43,14 +41,14 @@ static Result setupHeapAllocator(void) {
 
         if (memInfo.state == MEMSTATE_FREE) {
             // Check if we have a free range within the heap area.
-            if (memInfo.base_addr >= OS_HEAP_AREA_BEGIN) {
+            if (memInfo.base_addr >= minAddr) {
                 heapBase = memInfo.base_addr;
                 break;
             }
 
             // In some cases the heap area might not be initialized, thus we get a bigger range than expected.
-            if (memInfo.base_addr <= OS_HEAP_AREA_BEGIN && (memInfo.base_addr + memInfo.size) > OS_HEAP_AREA_BEGIN) {
-                heapBase = OS_HEAP_AREA_BEGIN;
+            if (memInfo.base_addr <= minAddr && (memInfo.base_addr + memInfo.size) > minAddr) {
+                heapBase = minAddr;
                 break;
             }
         }
